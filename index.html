@@ -4,6 +4,40 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bowtie Diagram - Car Accident Risk Analysis</title>
+    <script>
+      // Prevent Supabase initialization errors - must run before any other scripts
+      (function() {
+        'use strict';
+        // Override Supabase client creation globally
+        if (typeof window !== 'undefined') {
+          window.__SUPABASE_DISABLED__ = true;
+          
+          // Patch the Supabase client constructor if it exists
+          const originalError = window.Error;
+          const SupabaseError = function(message) {
+            if (message && message.includes('supabaseUrl is required')) {
+              console.warn('Supabase initialization prevented:', message);
+              return new originalError('Supabase is disabled in this project');
+            }
+            return new originalError(message);
+          };
+          SupabaseError.prototype = originalError.prototype;
+          
+          // Intercept module loading if possible
+          if (window.System && window.System.register) {
+            const originalRegister = window.System.register;
+            window.System.register = function(name, deps, declare) {
+              if (name && name.includes('supabase')) {
+                return originalRegister(name, deps, function() {
+                  return { execute: function() { return {}; } };
+                });
+              }
+              return originalRegister.apply(this, arguments);
+            };
+          }
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

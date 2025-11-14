@@ -5,6 +5,29 @@ import { fileURLToPath } from 'url';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
+// Plugin to replace Supabase code
+const supabasePlugin = {
+  name: 'supabase-replacer',
+  setup(build) {
+    // Replace Supabase imports with our shim
+    build.onResolve({ filter: /@supabase\/supabase-js/ }, (args) => {
+      return { path: join(__dirname, 'src/supabase-shim.ts'), namespace: 'file' };
+    });
+    
+    // Replace any Supabase createClient calls
+    build.onLoad({ filter: /.*/ }, async (args) => {
+      if (args.path.includes('supabase') && !args.path.includes('supabase-shim')) {
+        const contents = readFileSync(args.path, 'utf8');
+        // Replace createClient calls
+        const modified = contents
+          .replace(/createClient\s*\([^)]*\)/g, '(() => { console.warn("Supabase disabled"); return {}; })()')
+          .replace(/new\s+.*SupabaseClient/g, '(() => { console.warn("Supabase disabled"); return {}; })()');
+        return { contents: modified, loader: 'ts' };
+      }
+    });
+  },
+};
+
 // Build the app
 const result = await esbuild.build({
   entryPoints: ['src/main.tsx'],
@@ -23,6 +46,7 @@ const result = await esbuild.build({
   sourcemap: false,
   platform: 'browser',
   resolveExtensions: ['.tsx', '.ts', '.jsx', '.js', '.css'],
+  plugins: [supabasePlugin],
   // Exclude Supabase if it's accidentally bundled
   external: ['@supabase/supabase-js', '@supabase/*'],
   // Define environment variables to prevent Supabase initialization
@@ -36,6 +60,35 @@ const result = await esbuild.build({
   alias: {
     '@supabase/supabase-js': './src/supabase-shim.ts',
   },
+  // Inject code at the top to prevent Supabase errors
+  banner: {
+    js: `
+      // Prevent Supabase initialization errors - runs before any module code
+      (function() {
+        'use strict';
+        if (typeof window !== 'undefined') {
+          window.__SUPABASE_DISABLED__ = true;
+        }
+        // Monkey-patch Error constructor to catch Supabase errors
+        const OriginalError = Error;
+        const ErrorWrapper = function(message) {
+          if (message && typeof message === 'string' && message.includes('supabaseUrl is required')) {
+            console.warn('[Supabase] Initialization prevented - Supabase is disabled');
+            const err = new OriginalError('Supabase is disabled');
+            err.name = 'SupabaseDisabledError';
+            return err;
+          }
+          return new OriginalError(message);
+        };
+        ErrorWrapper.prototype = OriginalError.prototype;
+        if (typeof globalThis !== 'undefined') {
+          try {
+            globalThis.Error = ErrorWrapper;
+          } catch(e) {}
+        }
+      })();
+    `,
+  },
 });
 
 // Copy CSS file - create directory first if needed
@@ -46,8 +99,9 @@ try {
   console.warn('Could not copy CSS file:', e.message);
 }
 
-// Copy and update HTML
+// Copy and update HTML - preserve the Supabase prevention script
 const html = readFileSync('index.html', 'utf-8');
+// Only replace the script src, keep everything else including the prevention script
 const distHtml = html.replace(
   '<script type="module" src="/src/main.tsx"></script>',
   '<script type="module" src="/src/main.js"></script><link rel="stylesheet" href="/src/index.css">'
