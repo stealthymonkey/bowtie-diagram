@@ -86,10 +86,26 @@ const result = await esbuild.build({
   },
 });
 
-// Copy CSS file - create directory first if needed
+// Copy CSS files - create directory first if needed
 try {
   mkdirSync('dist/src', { recursive: true });
   copyFileSync('src/index.css', 'dist/src/index.css');
+  // Also try to copy React Flow CSS if it exists
+  try {
+    const reactFlowCss = join('node_modules', '@xyflow', 'react', 'dist', 'style.css');
+    if (readFileSync(reactFlowCss, 'utf8')) {
+      copyFileSync(reactFlowCss, 'dist/src/reactflow.css');
+      // Update HTML to include React Flow CSS
+      const htmlContent = readFileSync(join('dist', 'index.html'), 'utf8');
+      const updatedHtml = htmlContent.replace(
+        '<link rel="stylesheet" href="/src/index.css">',
+        '<link rel="stylesheet" href="/src/index.css"><link rel="stylesheet" href="/src/reactflow.css">'
+      );
+      writeFileSync(join('dist', 'index.html'), updatedHtml);
+    }
+  } catch (e) {
+    // React Flow CSS might be bundled, that's okay
+  }
 } catch (e) {
   console.warn('Could not copy CSS file:', e.message);
 }
