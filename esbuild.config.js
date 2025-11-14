@@ -69,22 +69,17 @@ const result = await esbuild.build({
         if (typeof window !== 'undefined') {
           window.__SUPABASE_DISABLED__ = true;
         }
-        // Monkey-patch Error constructor to catch Supabase errors
+        // Store original Error for React compatibility
         const OriginalError = Error;
-        const ErrorWrapper = function(message) {
-          if (message && typeof message === 'string' && message.includes('supabaseUrl is required')) {
-            console.warn('[Supabase] Initialization prevented - Supabase is disabled');
-            const err = new OriginalError('Supabase is disabled');
-            err.name = 'SupabaseDisabledError';
-            return err;
-          }
-          return new OriginalError(message);
-        };
-        ErrorWrapper.prototype = OriginalError.prototype;
-        if (typeof globalThis !== 'undefined') {
-          try {
-            globalThis.Error = ErrorWrapper;
-          } catch(e) {}
+        // Only patch if Supabase error is detected, don't interfere with React
+        if (typeof window !== 'undefined') {
+          window.addEventListener('error', function(e) {
+            if (e.message && e.message.includes('supabaseUrl is required')) {
+              e.preventDefault();
+              console.warn('[Supabase] Initialization prevented - Supabase is disabled');
+              return false;
+            }
+          }, true);
         }
       })();
     `,

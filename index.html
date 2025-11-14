@@ -12,29 +12,23 @@
         if (typeof window !== 'undefined') {
           window.__SUPABASE_DISABLED__ = true;
           
-          // Patch the Supabase client constructor if it exists
-          const originalError = window.Error;
-          const SupabaseError = function(message) {
-            if (message && message.includes('supabaseUrl is required')) {
-              console.warn('Supabase initialization prevented:', message);
-              return new originalError('Supabase is disabled in this project');
+          // Catch Supabase errors without interfering with React
+          window.addEventListener('error', function(e) {
+            if (e.message && typeof e.message === 'string' && e.message.includes('supabaseUrl is required')) {
+              e.preventDefault();
+              console.warn('[Supabase] Initialization prevented - Supabase is disabled');
+              return false;
             }
-            return new originalError(message);
-          };
-          SupabaseError.prototype = originalError.prototype;
+          }, true);
           
-          // Intercept module loading if possible
-          if (window.System && window.System.register) {
-            const originalRegister = window.System.register;
-            window.System.register = function(name, deps, declare) {
-              if (name && name.includes('supabase')) {
-                return originalRegister(name, deps, function() {
-                  return { execute: function() { return {}; } };
-                });
-              }
-              return originalRegister.apply(this, arguments);
-            };
-          }
+          // Intercept unhandled promise rejections
+          window.addEventListener('unhandledrejection', function(e) {
+            if (e.reason && typeof e.reason === 'object' && e.reason.message && e.reason.message.includes('supabaseUrl is required')) {
+              e.preventDefault();
+              console.warn('[Supabase] Promise rejection prevented - Supabase is disabled');
+              return false;
+            }
+          });
         }
       })();
     </script>
