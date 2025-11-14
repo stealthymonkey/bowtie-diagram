@@ -40,7 +40,7 @@ const result = await esbuild.build({
     '.css': 'text',
   },
   publicPath: '/',
-  entryNames: '[dir]/[name]',
+  entryNames: 'src/[name]', // Output to dist/src/main.js to match HTML
   assetNames: '[name]',
   minify: true,
   sourcemap: false,
