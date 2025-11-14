@@ -43,7 +43,7 @@ export async function layoutBowtieDiagram(
       'elk.layered.spacing.nodeNodeBetweenLayers': String(opts.spacing.vertical),
       'elk.layered.nodePlacement.strategy': 'SIMPLE',
       'elk.spacing.edgeEdge': '20',
-      'elk.spacing.edgeNode': '30',
+      'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
     },
     children: [
       // Left side: Threats
