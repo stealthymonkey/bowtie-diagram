@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
-import ReactFlow, {
+import {
+  ReactFlow,
   Background,
   Controls,
   type Edge,
