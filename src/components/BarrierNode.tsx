@@ -1,31 +1,65 @@
 import { memo } from 'react';
 import type { NodeProps } from '@xyflow/react';
 
+const palette = {
+  preventive: {
+    bg: '#ecfdf5',
+    border: '#059669',
+    label: 'Preventive barrier',
+  },
+  mitigative: {
+    bg: '#eef2ff',
+    border: '#6366f1',
+    label: 'Mitigative barrier',
+  },
+};
+
 export const BarrierNode = memo(({ data }: NodeProps) => {
-  const isPreventive = data.barrierType === 'preventive';
-  const bgColor = isPreventive ? '#d1fae5' : '#fef3c7';
-  const borderColor = isPreventive ? '#10b981' : '#f59e0b';
-  const icon = isPreventive ? '🛡️' : '🔧';
+  const type = data.barrierType === 'mitigative' ? 'mitigative' : 'preventive';
+  const colors = palette[type];
+  const dimmed = data.dimmed;
+  const selected = data.selected;
+  const highlighted = data.highlighted;
 
   return (
     <div
       style={{
-        background: bgColor,
-        border: `2px solid ${borderColor}`,
-        borderRadius: '6px',
-        padding: '8px',
-        minWidth: '120px',
-        textAlign: 'center',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
-        fontWeight: '500',
-        fontSize: '12px',
+        background: `linear-gradient(180deg, ${colors.bg}, #ffffff)`,
+        border: selected || highlighted ? `3px solid ${colors.border}` : `2px solid ${colors.border}`,
+        opacity: dimmed ? 0.35 : 1,
+        borderRadius: '12px',
+        padding: '10px 14px',
+        minWidth: '160px',
+        boxShadow: highlighted
+          ? '0 12px 24px rgba(15, 118, 110, 0.25)'
+          : '0 6px 14px rgba(148, 163, 184, 0.3)',
       }}
     >
-      <div style={{ marginBottom: '2px' }}>{icon}</div>
-      <div>{data.label}</div>
+      <div
+        style={{
+          fontSize: '0.7rem',
+          textTransform: 'uppercase',
+          letterSpacing: '0.04em',
+          color: colors.border,
+          marginBottom: '0.35rem',
+        }}
+      >
+        {colors.label}
+      </div>
+      <div style={{ fontWeight: 600, color: '#0f172a', lineHeight: 1.3 }}>{data.label}</div>
+      {data.effectiveness && (
+        <div
+          style={{
+            marginTop: '0.4rem',
+            fontSize: '0.75rem',
+            color: '#475569',
+          }}
+        >
+          Effectiveness: {data.effectiveness}
+        </div>
+      )}
     </div>
   );
 });
 
 BarrierNode.displayName = 'BarrierNode';
-

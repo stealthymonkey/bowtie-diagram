@@ -1,43 +1,65 @@
 import { memo } from 'react';
 import type { NodeProps } from '@xyflow/react';
 
+const severityPalette: Record<string, { bg: string; border: string }> = {
+  low: { bg: '#fee2e2', border: '#f87171' },
+  medium: { bg: '#fecaca', border: '#ef4444' },
+  high: { bg: '#fca5a5', border: '#dc2626' },
+  critical: { bg: '#f87171', border: '#b91c1c' },
+};
+
 export const ConsequenceNode = memo(({ data }: NodeProps) => {
-  const severityColors: Record<string, string> = {
-    low: '#dbeafe',
-    medium: '#93c5fd',
-    high: '#60a5fa',
-    critical: '#3b82f6',
-  };
-
-  const severityBorderColors: Record<string, string> = {
-    low: '#93c5fd',
-    medium: '#60a5fa',
-    high: '#3b82f6',
-    critical: '#1d4ed8',
-  };
-
   const severity = data.severity || 'medium';
-  const bgColor = severityColors[severity] || severityColors.medium;
-  const borderColor = severityBorderColors[severity] || severityBorderColors.medium;
+  const palette = severityPalette[severity] ?? severityPalette.medium;
+  const dimmed = data.dimmed;
+  const selected = data.selected;
+  const highlighted = data.highlighted;
 
   return (
     <div
       style={{
-        background: bgColor,
-        border: `3px solid ${borderColor}`,
-        borderRadius: '8px',
-        padding: '12px',
-        minWidth: '150px',
-        textAlign: 'center',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-        fontWeight: '600',
-        fontSize: '14px',
+        background: `linear-gradient(135deg, ${palette.bg}, #fee2e2)`,
+        border: selected || highlighted ? `3px solid ${palette.border}` : `2px solid ${palette.border}`,
+        opacity: dimmed ? 0.3 : 1,
+        borderRadius: '16px',
+        padding: '14px 18px',
+        minWidth: '180px',
+        maxWidth: '220px',
+        color: '#7f1d1d',
+        boxShadow: highlighted
+          ? '0 14px 32px rgba(220, 38, 38, 0.35)'
+          : '0 8px 18px rgba(248, 113, 113, 0.3)',
       }}
     >
-      <div style={{ marginBottom: '4px' }}>💥</div>
-      <div>{data.label}</div>
-      {data.level !== undefined && data.level > 0 && (
-        <div style={{ fontSize: '10px', color: '#666', marginTop: '4px' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '0.35rem',
+          fontSize: '0.75rem',
+          letterSpacing: '0.05em',
+          textTransform: 'uppercase',
+          color: '#7f1d1d',
+        }}
+      >
+        <span>Consequence</span>
+        {data.hasChildren ? (
+          <span
+            style={{
+              borderRadius: '999px',
+              border: `1px solid ${palette.border}`,
+              padding: '0 6px',
+              fontWeight: 700,
+            }}
+          >
+            +
+          </span>
+        ) : null}
+      </div>
+      <div style={{ fontSize: '1rem', lineHeight: 1.3 }}>{data.label}</div>
+      {data.level !== undefined && (
+        <div style={{ marginTop: '0.4rem', fontSize: '0.75rem', color: '#7f1d1d' }}>
           Level {data.level}
         </div>
       )}
@@ -46,4 +68,3 @@ export const ConsequenceNode = memo(({ data }: NodeProps) => {
 });
 
 ConsequenceNode.displayName = 'ConsequenceNode';
-

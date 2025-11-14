@@ -2,26 +2,38 @@ import { memo } from 'react';
 import type { NodeProps } from '@xyflow/react';
 
 export const TopEventNode = memo(({ data }: NodeProps) => {
+  const dimmed = data.dimmed;
+  const selected = data.selected;
+  const highlighted = data.highlighted;
+
   return (
     <div
       style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        border: '4px solid #4c1d95',
-        borderRadius: '12px',
-        padding: '20px',
-        minWidth: '180px',
+        background: 'linear-gradient(135deg, #fde68a, #f97316)',
+        border: selected || highlighted ? '4px solid #c2410c' : '3px solid #ea580c',
+        opacity: dimmed ? 0.4 : 1,
+        borderRadius: '50%',
+        width: '200px',
+        height: '200px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#7c2d12',
         textAlign: 'center',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-        color: 'white',
-        fontWeight: 'bold',
-        fontSize: '16px',
+        fontWeight: 700,
+        boxShadow: highlighted
+          ? '0 18px 36px rgba(234, 88, 12, 0.45)'
+          : '0 12px 28px rgba(234, 88, 12, 0.35)',
+        padding: '1rem',
       }}
     >
-      <div style={{ marginBottom: '8px', fontSize: '24px' }}>⚡</div>
-      <div>{data.label}</div>
+      <div style={{ fontSize: '0.8rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+        Top Event
+      </div>
+      <div style={{ fontSize: '1.1rem', lineHeight: 1.35 }}>{data.label}</div>
     </div>
   );
 });
 
 TopEventNode.displayName = 'TopEventNode';
-
