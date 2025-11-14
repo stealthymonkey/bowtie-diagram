@@ -1,5 +1,5 @@
 import esbuild from 'esbuild';
-import { readFileSync, writeFileSync, copyFileSync } from 'fs';
+import { readFileSync, writeFileSync, copyFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -25,8 +25,9 @@ const result = await esbuild.build({
   resolveExtensions: ['.tsx', '.ts', '.jsx', '.js', '.css'],
 });
 
-// Copy CSS file
+// Copy CSS file - create directory first if needed
 try {
+  mkdirSync('dist/src', { recursive: true });
   copyFileSync('src/index.css', 'dist/src/index.css');
 } catch (e) {
   console.warn('Could not copy CSS file:', e.message);
