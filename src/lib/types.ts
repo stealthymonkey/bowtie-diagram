@@ -1,105 +1,78 @@
-export interface BarrierType {
+// Bowtie Diagram Types
+
+export interface Threat {
   id: string;
-  type_name: string;
-  color_code: string;
-  display_color: string;
-  icon: string;
-  description: string;
+  label: string;
+  description?: string;
+  level: number; // Hierarchy level (0 = top level, higher = more detailed)
+  parentId?: string; // For hierarchical relationships
+  severity?: 'low' | 'medium' | 'high' | 'critical';
+  barriers?: Barrier[];
+  subThreats?: Threat[]; // Nested threats for detailed views
 }
 
-export interface Hazard {
+export interface Barrier {
   id: string;
-  name: string;
-  description: string | null;
-  category: string;
-  severity_level: string;
-  icon: string | null;
-  parent_hazard_id: string | null;
-  drill_down_level: number;
-}
-
-export interface BowTieDiagram {
-  id: string;
-  hazard_id: string;
-  name: string;
-  description: string | null;
+  label: string;
+  description?: string;
+  type: 'preventive' | 'mitigative';
+  effectiveness?: 'low' | 'medium' | 'high';
+  threatId?: string; // Links to threat (preventive)
+  consequenceId?: string; // Links to consequence (mitigative)
 }
 
 export interface TopEvent {
   id: string;
-  bowtie_id: string;
-  name: string;
-  description: string | null;
-  severity_level: string;
-  speed_impact: number | null;
-}
-
-export interface Threat {
-  id: string;
-  bowtie_id: string;
-  name: string;
-  description: string | null;
-  threat_type: string | null;
-  threat_order: number;
+  label: string;
+  description?: string;
+  severity?: 'low' | 'medium' | 'high' | 'critical';
 }
 
 export interface Consequence {
   id: string;
-  bowtie_id: string;
+  label: string;
+  description?: string;
+  level: number; // Hierarchy level
+  parentId?: string;
+  severity?: 'low' | 'medium' | 'high' | 'critical';
+  barriers?: Barrier[];
+  subConsequences?: Consequence[]; // Nested consequences
+}
+
+export interface BowtieDiagram {
+  id: string;
   name: string;
-  description: string | null;
-  severity_level: string;
-  consequence_order: number;
-}
-
-export interface PreventionBarrier {
-  id: string;
-  bowtie_id: string;
-  name: string;
-  description: string | null;
-  barrier_type_id: string;
-  barrier_type?: BarrierType;
-  responsibility_role: string | null;
-  effectiveness_level: string;
-  barrier_order: number;
-}
-
-export interface BarrierConnection {
-  id: string;
-  bowtie_id: string;
-  barrier_id: string;
-  threat_id: string | null;
-  consequence_id: string | null;
-  chain_position: number;
-  sequence_order: number;
-}
-
-export interface Connection {
-  id: string;
-  bowtie_id: string;
-  threat_id: string | null;
-  top_event_id: string;
-  consequence_id: string | null;
-  connection_type: string;
-}
-
-export interface HazardDetail {
-  hazard: Hazard;
-  bowtie: BowTieDiagram;
-  top_event: TopEvent;
+  topEvent: TopEvent;
   threats: Threat[];
   consequences: Consequence[];
-  barriers: PreventionBarrier[];
-  barrier_connections: BarrierConnection[];
-  connections: Connection[];
+  barriers: Barrier[];
 }
 
-export interface ThreatBarrierChain {
-  threat: Threat;
-  barriers: (PreventionBarrier & { barrier_type: BarrierType })[];
+// View and Layout Types
+export interface ViewLevel {
+  level: number;
+  name: string;
+  description: string;
+  showSubElements: boolean;
 }
 
-export interface ConsequenceDetail {
-  consequence: Consequence;
-  description: string | null;
+export interface NodePosition {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
+
+export interface LayoutNode {
+  id: string;
+  type: 'threat' | 'barrier' | 'topEvent' | 'consequence';
+  label: string;
+  level: number;
+  parentId?: string;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  children?: LayoutNode[];
+}
+
