@@ -23,6 +23,19 @@ const result = await esbuild.build({
   sourcemap: false,
   platform: 'browser',
   resolveExtensions: ['.tsx', '.ts', '.jsx', '.js', '.css'],
+  // Exclude Supabase if it's accidentally bundled
+  external: ['@supabase/supabase-js', '@supabase/*'],
+  // Define environment variables to prevent Supabase initialization
+  define: {
+    'process.env.SUPABASE_URL': '""',
+    'process.env.SUPABASE_ANON_KEY': '""',
+    'import.meta.env.SUPABASE_URL': '""',
+    'import.meta.env.SUPABASE_ANON_KEY': '""',
+  },
+  // Alias Supabase imports to our shim
+  alias: {
+    '@supabase/supabase-js': './src/supabase-shim.ts',
+  },
 });
 
 // Copy CSS file - create directory first if needed
