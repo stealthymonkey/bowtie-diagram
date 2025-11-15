@@ -557,6 +557,7 @@ function createReactFlowGraph(
         level: threat?.level ?? layoutNode.level,
         description: threat?.description,
         hasChildren: Boolean(threat?.subThreats?.length),
+        appearance: threat?.appearance,
       };
     }
 
@@ -570,6 +571,7 @@ function createReactFlowGraph(
         level: consequence?.level ?? layoutNode.level,
         description: consequence?.description,
         hasChildren: Boolean(consequence?.subConsequences?.length),
+        appearance: consequence?.appearance,
       };
     }
 

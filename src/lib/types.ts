@@ -1,5 +1,12 @@
 // Bowtie Diagram Types
 
+export interface NodeAppearance {
+  background?: string;
+  borderColor?: string;
+  textColor?: string;
+  shadowColor?: string;
+}
+
 export interface Threat {
   id: string;
   label: string;
@@ -9,6 +16,7 @@ export interface Threat {
   severity?: 'low' | 'medium' | 'high' | 'critical';
   barriers?: Barrier[];
   subThreats?: Threat[]; // Nested threats for detailed views
+  appearance?: NodeAppearance;
 }
 
 export interface Barrier {
@@ -43,6 +51,7 @@ export interface Consequence {
   severity?: 'low' | 'medium' | 'high' | 'critical';
   barriers?: Barrier[];
   subConsequences?: Consequence[]; // Nested consequences
+  appearance?: NodeAppearance;
 }
 
 export interface BowtieDiagram {

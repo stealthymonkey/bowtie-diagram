@@ -1,4 +1,6 @@
 import type { BowtieDiagram } from './types';
+import { baselineThreats } from './threatDefinitions';
+import { baselineConsequences } from './consequenceDefinitions';
 
 export const hazardTopEventDiagram: BowtieDiagram = {
   id: 'hazard-top-event',
@@ -14,7 +16,7 @@ export const hazardTopEventDiagram: BowtieDiagram = {
     description: 'Unintended vehicle movement that can escalate to severe incidents.',
     severity: 'high',
   },
-  threats: [],
-  consequences: [],
+  threats: baselineThreats,
+  consequences: baselineConsequences,
   barriers: [],
 };

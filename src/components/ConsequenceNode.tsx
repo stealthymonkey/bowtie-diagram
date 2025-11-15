@@ -20,7 +20,12 @@ const invisibleHandleStyle: CSSProperties = {
 
 export const ConsequenceNode = memo(({ data }: NodeProps) => {
   const severity = data.severity || 'medium';
-  const palette = severityPalette[severity] ?? severityPalette.medium;
+  const basePalette = severityPalette[severity] ?? severityPalette.medium;
+  const background = data.appearance?.background ?? `linear-gradient(135deg, ${basePalette.bg}, #fee2e2)`;
+  const borderColor = data.appearance?.borderColor ?? basePalette.border;
+  const textColor = data.appearance?.textColor ?? '#7f1d1d';
+  const restingShadow = data.appearance?.shadowColor ?? 'rgba(248, 113, 113, 0.3)';
+  const highlightShadow = data.appearance?.shadowColor ?? 'rgba(220, 38, 38, 0.35)';
   const dimmed = data.dimmed;
   const selected = data.selected;
   const highlighted = data.highlighted;
@@ -28,17 +33,17 @@ export const ConsequenceNode = memo(({ data }: NodeProps) => {
   return (
     <div
       style={{
-        background: `linear-gradient(135deg, ${palette.bg}, #fee2e2)`,
-        border: selected || highlighted ? `3px solid ${palette.border}` : `2px solid ${palette.border}`,
+        background,
+        border: selected || highlighted ? `3px solid ${borderColor}` : `2px solid ${borderColor}`,
         opacity: dimmed ? 0.3 : 1,
         borderRadius: '16px',
         padding: '14px 18px',
         minWidth: '180px',
         maxWidth: '220px',
-        color: '#7f1d1d',
+        color: textColor,
         boxShadow: highlighted
-          ? '0 14px 32px rgba(220, 38, 38, 0.35)'
-          : '0 8px 18px rgba(248, 113, 113, 0.3)',
+          ? `0 14px 32px ${highlightShadow}`
+          : `0 8px 18px ${restingShadow}`,
       }}
     >
       <Handle type="target" position={Position.Left} style={invisibleHandleStyle} />
