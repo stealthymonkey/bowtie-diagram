@@ -1,13 +1,14 @@
 import { memo, type CSSProperties } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 
-const handleStyle: CSSProperties = {
+const invisibleHandleStyle: CSSProperties = {
   width: 16,
   height: 16,
   borderRadius: '50%',
-  border: '2px solid #ea580c',
-  background: '#fff7ed',
-  boxShadow: '0 0 0 4px rgba(234, 88, 12, 0.2)',
+  opacity: 0,
+  border: 'none',
+  background: 'transparent',
+  pointerEvents: 'none',
 };
 
 export const TopEventNode = memo(({ data }: NodeProps) => {
@@ -37,9 +38,9 @@ export const TopEventNode = memo(({ data }: NodeProps) => {
         padding: '1rem',
       }}
     >
-      <Handle id="left" type="target" position={Position.Left} style={handleStyle} />
-      <Handle id="top" type="target" position={Position.Top} style={handleStyle} />
-      <Handle id="right" type="source" position={Position.Right} style={handleStyle} />
+      <Handle id="left" type="target" position={Position.Left} style={invisibleHandleStyle} />
+      <Handle id="top" type="target" position={Position.Top} style={invisibleHandleStyle} />
+      <Handle id="right" type="source" position={Position.Right} style={invisibleHandleStyle} />
       <div style={{ fontSize: '0.8rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
         Top Event
       </div>

@@ -14,14 +14,15 @@ const palette = {
   },
 };
 
-const createHandleStyle = (color: string): CSSProperties => ({
+const invisibleHandleStyle: CSSProperties = {
   width: 12,
   height: 12,
   borderRadius: '50%',
-  border: `2px solid ${color}`,
-  background: '#fff',
-  boxShadow: '0 0 0 3px rgba(15, 23, 42, 0.25)',
-});
+  opacity: 0,
+  border: 'none',
+  background: 'transparent',
+  pointerEvents: 'none',
+};
 
 export const BarrierNode = memo(({ data }: NodeProps) => {
   const type = data.barrierType === 'mitigative' ? 'mitigative' : 'preventive';
@@ -29,7 +30,6 @@ export const BarrierNode = memo(({ data }: NodeProps) => {
   const dimmed = data.dimmed;
   const selected = data.selected;
   const highlighted = data.highlighted;
-  const handleStyle = createHandleStyle(colors.border);
 
   return (
     <div
@@ -45,8 +45,8 @@ export const BarrierNode = memo(({ data }: NodeProps) => {
           : '0 6px 14px rgba(148, 163, 184, 0.3)',
       }}
     >
-      <Handle type="target" position={Position.Left} style={handleStyle} />
-      <Handle type="source" position={Position.Right} style={handleStyle} />
+      <Handle type="target" position={Position.Left} style={invisibleHandleStyle} />
+      <Handle type="source" position={Position.Right} style={invisibleHandleStyle} />
       <div
         style={{
           fontSize: '0.7rem',

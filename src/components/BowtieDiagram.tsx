@@ -673,16 +673,23 @@ function buildEdges(
   const nodeIds = new Set(layoutNodes.map((node) => node.id));
   const edges: Edge[] = [];
   const topEventNodeId = `topEvent-${diagram.topEvent.id}`;
+  const seenConnections = new Set<string>();
 
   const addEdge = (edge: Edge) => {
-    if (nodeIds.has(edge.source) && nodeIds.has(edge.target)) {
-      edges.push({
-        ...edge,
-        type: edge.type ?? 'bowtie',
-        style: { ...(edge.style ?? {}), ...EDGE_STYLE },
-        markerEnd: EDGE_MARKER,
-      });
+    if (!nodeIds.has(edge.source) || !nodeIds.has(edge.target)) {
+      return;
     }
+    const key = `${edge.source}->${edge.target}`;
+    if (seenConnections.has(key)) {
+      return;
+    }
+    seenConnections.add(key);
+    edges.push({
+      ...edge,
+      type: edge.type ?? 'bowtie',
+      style: { ...(edge.style ?? {}), ...EDGE_STYLE },
+      markerEnd: EDGE_MARKER,
+    });
   };
 
   layoutNodes.forEach((layoutNode) => {

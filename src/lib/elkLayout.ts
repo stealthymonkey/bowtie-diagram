@@ -114,6 +114,7 @@ function createThreatNode(threat: Threat, allBarriers: Barrier[]): any {
       properties: {
         type: 'barrier',
         barrierType: 'preventive',
+        parentId: threat.id,
       },
     })),
   };
@@ -155,6 +156,7 @@ function createConsequenceNode(consequence: Consequence, allBarriers: Barrier[])
       properties: {
         type: 'barrier',
         barrierType: 'mitigative',
+        parentId: consequence.id,
       },
     })),
   };
@@ -220,7 +222,10 @@ function createEdges(
 function convertElkToLayoutNodes(elkGraph: any): LayoutNode[] {
   const nodes: LayoutNode[] = [];
 
-  function traverse(node: any) {
+  function traverse(node: any, offsetX = 0, offsetY = 0) {
+    const absoluteX = (node.x ?? 0) + offsetX;
+    const absoluteY = (node.y ?? 0) + offsetY;
+
     if (node.properties?.type) {
       nodes.push({
         id: node.id,
@@ -228,20 +233,20 @@ function convertElkToLayoutNodes(elkGraph: any): LayoutNode[] {
         label: node.labels?.[0]?.text || '',
         level: node.properties.level || 0,
         parentId: node.properties.parentId,
-        x: node.x || 0,
-        y: node.y || 0,
+        x: absoluteX,
+        y: absoluteY,
         width: node.width || 100,
         height: node.height || 50,
       });
     }
 
     if (node.children) {
-      node.children.forEach(traverse);
+      node.children.forEach((child: any) => traverse(child, absoluteX, absoluteY));
     }
   }
 
   if (elkGraph.children) {
-    elkGraph.children.forEach(traverse);
+    elkGraph.children.forEach((child: any) => traverse(child, 0, 0));
   }
 
   return nodes;

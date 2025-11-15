@@ -8,14 +8,15 @@ const severityPalette: Record<string, { bg: string; border: string }> = {
   critical: { bg: '#818cf8', border: '#4338ca' },
 };
 
-const createHandleStyle = (color: string): CSSProperties => ({
+const invisibleHandleStyle: CSSProperties = {
   width: 14,
   height: 14,
   borderRadius: '50%',
-  border: `2px solid ${color}`,
-  background: '#0f172a',
-  boxShadow: '0 0 0 3px rgba(15, 23, 42, 0.25)',
-});
+  opacity: 0,
+  border: 'none',
+  background: 'transparent',
+  pointerEvents: 'none',
+};
 
 export const ThreatNode = memo(({ data }: NodeProps) => {
   const severity = data.severity || 'medium';
@@ -23,7 +24,6 @@ export const ThreatNode = memo(({ data }: NodeProps) => {
   const dimmed = data.dimmed;
   const selected = data.selected;
   const highlighted = data.highlighted;
-  const handleStyle = createHandleStyle(palette.border);
 
   return (
     <div
@@ -42,8 +42,8 @@ export const ThreatNode = memo(({ data }: NodeProps) => {
         fontWeight: 600,
       }}
     >
-      <Handle type="target" position={Position.Left} style={handleStyle} />
-      <Handle type="source" position={Position.Right} style={handleStyle} />
+      <Handle type="target" position={Position.Left} style={invisibleHandleStyle} />
+      <Handle type="source" position={Position.Right} style={invisibleHandleStyle} />
       <div
         style={{
           display: 'flex',
