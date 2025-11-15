@@ -17,12 +17,14 @@ import type {
   Threat,
   Consequence,
   Barrier,
+  Hazard,
 } from '../lib/types';
 import { layoutBowtieDiagram } from '../lib/elkLayout';
 import { ThreatNode } from './ThreatNode';
 import { ConsequenceNode } from './ConsequenceNode';
 import { BarrierNode } from './BarrierNode';
 import { TopEventNode } from './TopEventNode';
+import { HazardNode } from './HazardNode';
 
 type Severity = 'low' | 'medium' | 'high' | 'critical';
 type SeverityFilter = 'all' | Severity;
@@ -102,6 +104,7 @@ const nodeTypes: NodeTypes = {
   consequence: ConsequenceNode,
   barrier: BarrierNode,
   topEvent: TopEventNode,
+  hazard: HazardNode,
 };
 
 export function BowtieDiagramComponent({
@@ -250,6 +253,8 @@ export function BowtieDiagramComponent({
     consequenceMap,
     barrierMap,
   );
+  const hazardLabel = diagram.hazard?.label ?? diagram.name;
+  const hazardDescription = diagram.hazard?.description;
 
   return (
     <div className="bowtie-shell">
@@ -472,8 +477,9 @@ export function BowtieDiagramComponent({
               </p>
               <div className="bowtie-panel-divider" />
               <p>
-                Hazard in focus: <strong>{diagram.name}</strong>
+                Hazard in focus: <strong>{hazardLabel}</strong>
               </p>
+              {hazardDescription && <p>{hazardDescription}</p>}
               <p>
                 Top event: <strong>{diagram.topEvent.label}</strong>
               </p>
@@ -562,6 +568,19 @@ function createReactFlowGraph(
   });
 
   const edges = buildEdges(layoutNodes, diagram, barrierMap);
+
+  if (diagram.hazard) {
+    const hazard = createHazardReactFlowNode(
+      diagram.hazard,
+      diagram.topEvent.id,
+      nodes,
+    );
+    if (hazard) {
+      nodes.push(hazard.node);
+      edges.push(hazard.edge);
+    }
+  }
+
   return { nodes, edges };
 }
 
@@ -678,6 +697,41 @@ function buildEdges(
   return edges;
 }
 
+function createHazardReactFlowNode(
+  hazard: Hazard,
+  topEventId: string,
+  nodes: Node[],
+) {
+  const topEventNode = nodes.find((node) => node.id === `topEvent-${topEventId}`);
+  if (!topEventNode) {
+    return null;
+  }
+
+  const hazardNodeId = `hazard-${hazard.id}`;
+  const hazardNode: Node = {
+    id: hazardNodeId,
+    type: 'hazard',
+    position: {
+      x: topEventNode.position.x,
+      y: topEventNode.position.y - 260,
+    },
+    data: {
+      label: hazard.label,
+      description: hazard.description,
+    },
+    draggable: false,
+  };
+
+  const hazardEdge: Edge = {
+    id: `edge-${hazardNodeId}-topEvent`,
+    source: hazardNodeId,
+    target: topEventNode.id,
+    type: 'smoothstep',
+  };
+
+  return { node: hazardNode, edge: hazardEdge };
+}
+
 function getNodeDetails(
   nodeId: string | null,
   diagram: BowtieDiagram,
@@ -699,6 +753,19 @@ function getNodeDetails(
       severity: threat.severity,
       level: threat.level,
       tags: threat.subThreats?.map((sub) => sub.label) ?? [],
+    };
+  }
+
+  if (nodeId.startsWith('hazard-')) {
+    const hazard = diagram.hazard;
+    if (!hazard || nodeId !== `hazard-${hazard.id}`) {
+      return null;
+    }
+    return {
+      id: nodeId,
+      kind: 'hazard',
+      label: hazard.label,
+      description: hazard.description,
     };
   }
 

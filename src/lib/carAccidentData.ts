@@ -6,6 +6,12 @@ import type { BowtieDiagram } from './types';
 export const carAccidentBowtie: BowtieDiagram = {
   id: 'car-accident-1',
   name: 'Car Accident Risk Analysis',
+  hazard: {
+    id: 'hazard-vehicle-highway',
+    label: 'Driving a commercial vehicle on a highway',
+    description:
+      'Operating a loaded commercial vehicle on a public highway with mixed traffic and changing weather conditions.',
+  },
   topEvent: {
     id: 'top-event-1',
     label: 'Vehicle Collision',

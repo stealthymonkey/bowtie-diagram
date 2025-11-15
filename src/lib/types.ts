@@ -28,6 +28,12 @@ export interface TopEvent {
   severity?: 'low' | 'medium' | 'high' | 'critical';
 }
 
+export interface Hazard {
+  id: string;
+  label: string;
+  description?: string;
+}
+
 export interface Consequence {
   id: string;
   label: string;
@@ -42,6 +48,7 @@ export interface Consequence {
 export interface BowtieDiagram {
   id: string;
   name: string;
+  hazard?: Hazard;
   topEvent: TopEvent;
   threats: Threat[];
   consequences: Consequence[];
@@ -65,7 +72,7 @@ export interface NodePosition {
 
 export interface LayoutNode {
   id: string;
-  type: 'threat' | 'barrier' | 'topEvent' | 'consequence';
+  type: 'threat' | 'barrier' | 'topEvent' | 'consequence' | 'hazard';
   label: string;
   level: number;
   parentId?: string;
