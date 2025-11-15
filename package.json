@@ -6,8 +6,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "build": "node esbuild.config.js",
-    "dev": "node esbuild.config.js",
-    "test:validation": "tsx tests/validation.test.ts"
+    "dev": "node esbuild.config.js"
   },
   "dependencies": {
     "@xyflow/react": "^12.9.3",
@@ -20,7 +19,6 @@
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "esbuild": "^0.27.0",
-    "tsx": "^4.20.6",
     "typescript": "^5.5.3"
   }
 }
