@@ -1,0 +1,93 @@
+.hte-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 2rem;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at top, #f8fafc, #e2e8f0);
+  color: #0f172a;
+}
+
+.hte-shell h1 {
+  font-size: 1.75rem;
+  margin-bottom: 2rem;
+}
+
+.hte-diagram {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.hte-hazard {
+  width: 340px;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.2);
+  border: 3px solid #fdba74;
+  background: #fff;
+}
+
+.hte-hazard__stripes {
+  height: 26px;
+  background: repeating-linear-gradient(
+    -45deg,
+    #fbbf24,
+    #fbbf24 16px,
+    #111827 16px,
+    #111827 32px
+  );
+}
+
+.hte-hazard__body {
+  padding: 1rem 1.25rem 1.5rem;
+  text-align: center;
+}
+
+.hte-label {
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  margin-bottom: 0.4rem;
+  color: #475569;
+}
+
+.hte-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.hte-hazard__body p,
+.hte-top p {
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.hte-connector {
+  width: 4px;
+  height: 120px;
+  background: linear-gradient(180deg, #fbbf24, #f97316);
+  border-radius: 999px;
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.3);
+}
+
+.hte-top {
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle at top, #fde68a, #f97316);
+  border: 4px solid #c2410c;
+  box-shadow: 0 16px 36px rgba(234, 88, 12, 0.35);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #7c2d12;
+}
