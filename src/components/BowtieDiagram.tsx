@@ -1,14 +1,16 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import {
   ReactFlow,
   Background,
   Controls,
   MarkerType,
+  applyNodeChanges,
   type Edge,
   type Node,
   type NodeTypes,
   type ReactFlowInstance,
+  type NodeChange,
 } from '@xyflow/react';
 import reactFlowStyles from '@xyflow/react/dist/style.css';
 import bowtieStyles from './BowtieDiagram.css';
@@ -118,6 +120,12 @@ const EDGE_MARKER = {
   color: '#0f172a',
   width: 18,
   height: 18,
+};
+
+const DEFAULT_EDGE_OPTIONS = {
+  type: 'smoothstep' as const,
+  style: EDGE_STYLE,
+  markerEnd: EDGE_MARKER,
 };
 
 export function BowtieDiagramComponent({
@@ -240,6 +248,14 @@ export function BowtieDiagramComponent({
     const delta = direction === 'in' ? 0.2 : -0.2;
     reactFlowInstance.zoomTo(reactFlowInstance.getZoom() + delta, { duration: 200 });
   };
+
+  const handleNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      setRawNodes((nds) => applyNodeChanges(changes, nds));
+      setNodes((nds) => applyNodeChanges(changes, nds));
+    },
+    [],
+  );
 
   if (error) {
     return (
@@ -369,21 +385,23 @@ export function BowtieDiagramComponent({
 
       <section className="bowtie-body">
         <div className="bowtie-canvas">
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            nodeTypes={nodeTypes}
-            fitView
-            minZoom={0.25}
-            maxZoom={1.5}
-            nodesDraggable={false}
-            edgesFocusable={false}
-            panOnDrag
-            zoomOnScroll
-            onInit={(instance) => setReactFlowInstance(instance)}
-            onNodeClick={(_, node) => setSelectedNodeId(node.id)}
-            onPaneClick={() => setSelectedNodeId(null)}
-          >
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          defaultEdgeOptions={DEFAULT_EDGE_OPTIONS}
+          fitView
+          minZoom={0.25}
+          maxZoom={1.5}
+          edgesFocusable={false}
+          panOnDrag
+          zoomOnScroll
+          nodesDraggable
+          onNodesChange={handleNodesChange}
+          onInit={(instance) => setReactFlowInstance(instance)}
+          onNodeClick={(_, node) => setSelectedNodeId(node.id)}
+          onPaneClick={() => setSelectedNodeId(null)}
+        >
             <Background />
             <Controls showInteractive={false} position="bottom-right" />
           </ReactFlow>
@@ -520,6 +538,8 @@ function createReactFlowGraph(
         x: layoutNode.x ?? 0,
         y: layoutNode.y ?? 0,
       },
+      sourcePosition: getSourcePosition(layoutNode.type),
+      targetPosition: getTargetPosition(layoutNode.type),
       data: {
         label: layoutNode.label,
         level: layoutNode.level,
@@ -557,6 +577,8 @@ function createReactFlowGraph(
     if (layoutNode.type === 'barrier') {
       const barrierId = extractBarrierId(layoutNode.id);
       const barrier = barrierId ? barrierMap.get(barrierId) : undefined;
+      base.sourcePosition = 'right';
+      base.targetPosition = 'left';
       base.data = {
         ...base.data,
         label: barrier?.label ?? layoutNode.label,
@@ -750,6 +772,8 @@ function createHazardReactFlowNode(
       x: topEventNode.position.x,
       y: topEventNode.position.y - 260,
     },
+    sourcePosition: 'bottom',
+    targetPosition: 'top',
     data: {
       label: hazard.label,
       description: hazard.description,
@@ -903,6 +927,32 @@ function buildConsequenceMap(consequences: Consequence[]): ConsequenceMap {
   };
   traverse(consequences);
   return map;
+}
+
+function getSourcePosition(type: LayoutNode['type']) {
+  switch (type) {
+    case 'hazard':
+      return 'bottom';
+    case 'topEvent':
+    case 'threat':
+    case 'consequence':
+    case 'barrier':
+    default:
+      return 'right';
+  }
+}
+
+function getTargetPosition(type: LayoutNode['type']) {
+  switch (type) {
+    case 'hazard':
+      return 'top';
+    case 'threat':
+    case 'consequence':
+    case 'barrier':
+    case 'topEvent':
+    default:
+      return 'left';
+  }
 }
 
 function severityPillStyle(severity: Severity): CSSProperties {
