@@ -28,7 +28,7 @@ import { BarrierNode } from './BarrierNode';
 import { TopEventNode } from './TopEventNode';
 import { HazardNode } from './HazardNode';
 import { BowtieEdge } from './BowtieEdge';
-import { DEFAULT_CONNECTION, HAZARD_CONNECTION } from '../lib/connectionStyles';
+import { DEFAULT_CONNECTION } from '../lib/connectionStyles';
 
 type Severity = 'low' | 'medium' | 'high' | 'critical';
 type SeverityFilter = 'all' | Severity;
@@ -123,7 +123,6 @@ const TOP_EVENT_NODE_SIZE = 200;
 const DEFAULT_EDGE_OPTIONS = {
   type: 'bowtie' as const,
   style: DEFAULT_CONNECTION.style,
-  markerEnd: DEFAULT_CONNECTION.markerEnd,
 };
 
 export function BowtieDiagramComponent({
@@ -681,14 +680,10 @@ function buildEdges(
       ...DEFAULT_CONNECTION.style,
       ...(edge.style ?? {}),
     };
-    const markerEnd = Object.prototype.hasOwnProperty.call(edge, 'markerEnd')
-      ? edge.markerEnd
-      : DEFAULT_CONNECTION.markerEnd;
     edges.push({
       ...edge,
       type: edge.type ?? 'bowtie',
       style: mergedStyle,
-      markerEnd,
     });
   };
 
@@ -810,8 +805,7 @@ function createHazardReactFlowNode(
     sourceHandle: 'bottom',
     targetHandle: 'top',
     type: 'bowtie',
-    style: { ...HAZARD_CONNECTION.style },
-    markerEnd: HAZARD_CONNECTION.markerEnd,
+    style: DEFAULT_CONNECTION.style,
   };
 
   return { node: hazardNode, edge: hazardEdge };

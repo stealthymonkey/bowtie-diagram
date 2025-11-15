@@ -1,5 +1,12 @@
 import type { Consequence } from './types';
 
+const CONSEQUENCE_APPEARANCE = {
+  background: 'linear-gradient(135deg,#dc2626,#fca5a5)',
+  borderColor: '#991b1b',
+  textColor: '#fff1f2',
+  shadowColor: 'rgba(220,38,38,0.35)',
+};
+
 export const baselineConsequences: Consequence[] = [
   {
     id: 'consequence-fixed-object',
@@ -7,12 +14,7 @@ export const baselineConsequences: Consequence[] = [
     description: 'Collision with guard rails, barriers, or poles.',
     level: 0,
     severity: 'high',
-    appearance: {
-      background: 'linear-gradient(135deg,#f87171,#fecaca)',
-      borderColor: '#b91c1c',
-      textColor: '#7f1d1d',
-      shadowColor: 'rgba(185,28,28,0.35)',
-    },
+    appearance: CONSEQUENCE_APPEARANCE,
   },
   {
     id: 'consequence-driver-impact',
@@ -20,11 +22,7 @@ export const baselineConsequences: Consequence[] = [
     description: 'Occupants strike internal vehicle surfaces.',
     level: 0,
     severity: 'high',
-    appearance: {
-      background: 'linear-gradient(135deg,#f97316,#fed7aa)',
-      borderColor: '#c2410c',
-      textColor: '#7c2d12',
-    },
+    appearance: CONSEQUENCE_APPEARANCE,
   },
   {
     id: 'consequence-rollover',
@@ -32,11 +30,6 @@ export const baselineConsequences: Consequence[] = [
     description: 'Vehicle overturns due to loss of stability.',
     level: 0,
     severity: 'critical',
-    appearance: {
-      background: 'linear-gradient(135deg,#b91c1c,#fca5a5)',
-      borderColor: '#7f1d1d',
-      textColor: '#fff5f5',
-    },
+    appearance: CONSEQUENCE_APPEARANCE,
   },
 ];
-

@@ -1,5 +1,12 @@
 import type { Threat } from './types';
 
+const THREAT_APPEARANCE = {
+  background: 'linear-gradient(135deg,#1d4ed8,#60a5fa)',
+  borderColor: '#1e40af',
+  textColor: '#eff6ff',
+  shadowColor: 'rgba(30,64,175,0.35)',
+};
+
 export const baselineThreats: Threat[] = [
   {
     id: 'threat-intoxicated-driving',
@@ -7,12 +14,7 @@ export const baselineThreats: Threat[] = [
     description: 'Driver operates while impaired by alcohol or drugs.',
     level: 0,
     severity: 'critical',
-    appearance: {
-      background: 'linear-gradient(135deg,#4c1d95,#3b82f6)',
-      borderColor: '#c026d3',
-      textColor: '#f5f3ff',
-      shadowColor: 'rgba(76,29,149,0.35)',
-    },
+    appearance: THREAT_APPEARANCE,
   },
   {
     id: 'threat-distracted-driving',
@@ -20,11 +22,7 @@ export const baselineThreats: Threat[] = [
     description: 'Loss of focus due to phones, food, or other activities.',
     level: 0,
     severity: 'high',
-    appearance: {
-      background: 'linear-gradient(135deg,#1d4ed8,#60a5fa)',
-      borderColor: '#2563eb',
-      textColor: '#e0f2fe',
-    },
+    appearance: THREAT_APPEARANCE,
   },
   {
     id: 'threat-slippery-road',
@@ -32,11 +30,7 @@ export const baselineThreats: Threat[] = [
     description: 'Reduced tire traction from rain, snow, or spilled fluids.',
     level: 0,
     severity: 'medium',
-    appearance: {
-      background: 'linear-gradient(135deg,#0f766e,#5eead4)',
-      borderColor: '#14b8a6',
-      textColor: '#ecfeff',
-    },
+    appearance: THREAT_APPEARANCE,
   },
   {
     id: 'threat-poor-visibility',
@@ -44,11 +38,6 @@ export const baselineThreats: Threat[] = [
     description: "Fog, heavy rain, or darkness limits the driver's view.",
     level: 0,
     severity: 'medium',
-    appearance: {
-      background: 'linear-gradient(135deg,#475569,#cbd5f5)',
-      borderColor: '#1e293b',
-      textColor: '#f8fafc',
-    },
+    appearance: THREAT_APPEARANCE,
   },
 ];
-
