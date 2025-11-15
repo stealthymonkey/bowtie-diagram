@@ -4,7 +4,6 @@ import {
   ReactFlow,
   Background,
   Controls,
-  MarkerType,
   applyNodeChanges,
   type Edge,
   type Node,
@@ -29,6 +28,7 @@ import { BarrierNode } from './BarrierNode';
 import { TopEventNode } from './TopEventNode';
 import { HazardNode } from './HazardNode';
 import { BowtieEdge } from './BowtieEdge';
+import { DEFAULT_CONNECTION, HAZARD_CONNECTION } from '../lib/connectionStyles';
 
 type Severity = 'low' | 'medium' | 'high' | 'critical';
 type SeverityFilter = 'all' | Severity;
@@ -115,24 +115,15 @@ const edgeTypes = {
   bowtie: BowtieEdge,
 };
 
-const EDGE_STYLE: CSSProperties = {
-  stroke: '#0ea5e9',
-  strokeWidth: 4,
-  strokeLinecap: 'round',
-  filter: 'drop-shadow(0 3px 6px rgba(14,165,233,0.35))',
-};
-
-const EDGE_MARKER = {
-  type: MarkerType.ArrowClosed,
-  color: '#0ea5e9',
-  width: 18,
-  height: 18,
-};
+const HAZARD_NODE_WIDTH = 240;
+const HAZARD_NODE_HEIGHT = 150;
+const HAZARD_VERTICAL_GAP = 18;
+const TOP_EVENT_NODE_SIZE = 200;
 
 const DEFAULT_EDGE_OPTIONS = {
   type: 'bowtie' as const,
-  style: EDGE_STYLE,
-  markerEnd: EDGE_MARKER,
+  style: DEFAULT_CONNECTION.style,
+  markerEnd: DEFAULT_CONNECTION.markerEnd,
 };
 
 export function BowtieDiagramComponent({
@@ -684,11 +675,18 @@ function buildEdges(
       return;
     }
     seenConnections.add(key);
+    const mergedStyle = {
+      ...DEFAULT_CONNECTION.style,
+      ...(edge.style ?? {}),
+    };
+    const markerEnd = Object.prototype.hasOwnProperty.call(edge, 'markerEnd')
+      ? edge.markerEnd
+      : DEFAULT_CONNECTION.markerEnd;
     edges.push({
       ...edge,
       type: edge.type ?? 'bowtie',
-      style: { ...(edge.style ?? {}), ...EDGE_STYLE },
-      markerEnd: EDGE_MARKER,
+      style: mergedStyle,
+      markerEnd,
     });
   };
 
@@ -780,13 +778,17 @@ function createHazardReactFlowNode(
     return null;
   }
 
+  const topEventWidth = topEventNode.width ?? TOP_EVENT_NODE_SIZE;
+  const hazardX = (topEventNode.position.x ?? 0) + (topEventWidth - HAZARD_NODE_WIDTH) / 2;
+  const hazardY = (topEventNode.position.y ?? 0) - HAZARD_NODE_HEIGHT - HAZARD_VERTICAL_GAP;
+
   const hazardNodeId = `hazard-${hazard.id}`;
   const hazardNode: Node = {
     id: hazardNodeId,
     type: 'hazard',
     position: {
-      x: topEventNode.position.x,
-      y: topEventNode.position.y - 260,
+      x: hazardX,
+      y: hazardY,
     },
     sourcePosition: 'bottom',
     targetPosition: 'top',
@@ -795,6 +797,8 @@ function createHazardReactFlowNode(
       description: hazard.description,
     },
     draggable: false,
+    width: HAZARD_NODE_WIDTH,
+    height: HAZARD_NODE_HEIGHT,
   };
 
   const hazardEdge: Edge = {
@@ -804,8 +808,8 @@ function createHazardReactFlowNode(
     sourceHandle: 'bottom',
     targetHandle: 'top',
     type: 'bowtie',
-    style: EDGE_STYLE,
-    markerEnd: EDGE_MARKER,
+    style: { ...HAZARD_CONNECTION.style },
+    markerEnd: HAZARD_CONNECTION.markerEnd,
   };
 
   return { node: hazardNode, edge: hazardEdge };
