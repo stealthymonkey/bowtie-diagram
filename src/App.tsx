@@ -1,11 +1,8 @@
-import { useState } from 'react';
 import { BowtieDiagramComponent } from './components/BowtieDiagram';
 import { hazardTopEventDiagram } from './lib/hazardTopEvent';
 import './index.css';
 
 function App() {
-  const [viewLevel, setViewLevel] = useState(0);
-
   if (!BowtieDiagramComponent) {
     console.error('BowtieDiagramComponent is undefined!');
     return <div>Error: Component not loaded</div>;
@@ -13,11 +10,7 @@ function App() {
 
   return (
     <div className="app">
-      <BowtieDiagramComponent
-        diagram={hazardTopEventDiagram}
-        viewLevel={viewLevel}
-        onViewLevelChange={setViewLevel}
-      />
+      <BowtieDiagramComponent diagram={hazardTopEventDiagram} />
     </div>
   );
 }

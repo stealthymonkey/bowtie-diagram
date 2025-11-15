@@ -9,18 +9,11 @@ You can test the components by importing them into any React application:
 ```tsx
 import { BowtieDiagramComponent } from './src/components/BowtieDiagram';
 import { carAccidentBowtie } from './src/lib/carAccidentData';
-import { useState } from 'react';
 
 function TestApp() {
-  const [viewLevel, setViewLevel] = useState(0);
-  
   return (
     <div style={{ width: '100vw', height: '100vh' }}>
-      <BowtieDiagramComponent
-        diagram={carAccidentBowtie}
-        viewLevel={viewLevel}
-        onViewLevelChange={setViewLevel}
-      />
+      <BowtieDiagramComponent diagram={carAccidentBowtie} />
     </div>
   );
 }

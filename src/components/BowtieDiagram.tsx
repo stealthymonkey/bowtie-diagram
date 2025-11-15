@@ -31,13 +31,11 @@ import { BowtieEdge } from './BowtieEdge';
 import { DEFAULT_CONNECTION } from '../lib/connectionStyles';
 
 type Severity = 'low' | 'medium' | 'high' | 'critical';
-type SeverityFilter = 'all' | Severity;
-
 interface BowtieDiagramProps {
   diagram: BowtieDiagram;
-  viewLevel: number;
-  onViewLevelChange?: (level: number) => void;
 }
+
+type SeverityFilter = 'all' | Severity;
 
 interface FilterState {
   text: string;
@@ -45,63 +43,8 @@ interface FilterState {
   selectedNodeId: string | null;
 }
 
-interface RolePreset {
-  id: string;
-  label: string;
-  description: string;
-  viewLevel?: number;
-  severity?: SeverityFilter;
-  search?: string;
-}
-
-const ROLE_PRESETS: RolePreset[] = [
-  {
-    id: 'overview',
-    label: 'Executive Overview',
-    description: 'High-level threats, consequences, and critical severity.',
-    viewLevel: 0,
-    severity: 'high',
-  },
-  {
-    id: 'safety',
-    label: 'Safety Officer',
-    description: 'Full detail for proactive hazard management.',
-    viewLevel: 2,
-    severity: 'all',
-  },
-  {
-    id: 'operations',
-    label: 'Operations',
-    description: 'Focus on barriers and mitigations in play.',
-    viewLevel: 1,
-    severity: 'medium',
-    search: 'barrier',
-  },
-  {
-    id: 'compliance',
-    label: 'Compliance / Audit',
-    description: 'Highlight controls tied to inspections and procedures.',
-    viewLevel: 2,
-    severity: 'medium',
-    search: 'inspection',
-  },
-];
-
-const CUSTOM_PRESET: RolePreset = {
-  id: 'custom',
-  label: 'Custom view',
-  description: 'Use the controls to tailor the diagram to your role.',
-};
-
 type ThreatMap = Record<string, Threat>;
 type ConsequenceMap = Record<string, Consequence>;
-
-const severityScale: Record<Severity, number> = {
-  low: 0,
-  medium: 1,
-  high: 2,
-  critical: 3,
-};
 
 const nodeTypes: NodeTypes = {
   threat: ThreatNode,
@@ -120,6 +63,23 @@ const HAZARD_NODE_HEIGHT = 150;
 const HAZARD_VERTICAL_GAP = 40;
 const TOP_EVENT_NODE_SIZE = 200;
 
+const severityLevelMap: Record<Severity, number> = {
+  low: 1,
+  medium: 2,
+  high: 3,
+  critical: 4,
+};
+
+function deriveSeverityLevel(
+  severity?: Severity,
+  fallback?: number,
+): number | undefined {
+  if (severity && severityLevelMap[severity] !== undefined) {
+    return severityLevelMap[severity];
+  }
+  return typeof fallback === 'number' ? fallback : undefined;
+}
+
 const DEFAULT_EDGE_OPTIONS = {
   type: 'bowtie' as const,
   style: DEFAULT_CONNECTION.style,
@@ -127,8 +87,6 @@ const DEFAULT_EDGE_OPTIONS = {
 
 export function BowtieDiagramComponent({
   diagram,
-  viewLevel,
-  onViewLevelChange,
 }: BowtieDiagramProps) {
   const [rawNodes, setRawNodes] = useState<Node[]>([]);
   const [nodes, setNodes] = useState<Node[]>([]);
@@ -137,7 +95,6 @@ export function BowtieDiagramComponent({
   const [error, setError] = useState<string | null>(null);
   const [filterText, setFilterText] = useState('');
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('all');
-  const [activePreset, setActivePreset] = useState<string>('overview');
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
 
@@ -150,12 +107,6 @@ export function BowtieDiagramComponent({
     () => new Map(diagram.barriers.map((barrier) => [barrier.id, barrier])),
     [diagram],
   );
-
-  const maxLevel = useMemo(() => {
-    const threatLevels = collectLevels(diagram.threats);
-    const consequenceLevels = collectLevels(diagram.consequences);
-    return Math.max(threatLevels, consequenceLevels, 0);
-  }, [diagram]);
 
   const filters = useMemo<FilterState>(
     () => ({
@@ -184,7 +135,7 @@ export function BowtieDiagramComponent({
     setLoading(true);
     setError(null);
 
-    layoutBowtieDiagram(diagram, { viewLevel })
+    layoutBowtieDiagram(diagram, { viewLevel: Number.POSITIVE_INFINITY })
       .then((layoutedNodes) => {
         if (cancelled) return;
         const { nodes: rfNodes, edges: rfEdges } = createReactFlowGraph(
@@ -209,32 +160,12 @@ export function BowtieDiagramComponent({
     return () => {
       cancelled = true;
     };
-  }, [diagram, viewLevel, threatMap, consequenceMap, barrierMap]);
+  }, [diagram, threatMap, consequenceMap, barrierMap]);
 
   useEffect(() => {
     if (!rawNodes.length) return;
     setNodes(applyPresentation(rawNodes, filters));
   }, [rawNodes, filters]);
-
-  const handlePresetChange = (presetId: string) => {
-    setActivePreset(presetId);
-    const preset = ROLE_PRESETS.find((item) => item.id === presetId);
-    if (!preset) {
-      return;
-    }
-
-    if (typeof preset.viewLevel === 'number') {
-      onViewLevelChange?.(Math.min(maxLevel, preset.viewLevel));
-    }
-    setSeverityFilter(preset.severity ?? 'all');
-    setFilterText(preset.search ?? '');
-    setSelectedNodeId(null);
-  };
-
-  const handleViewLevelChange = (level: number) => {
-    setActivePreset('custom');
-    onViewLevelChange?.(level);
-  };
 
   const handleZoom = (direction: 'in' | 'out' | 'reset') => {
     if (!reactFlowInstance) return;
@@ -270,8 +201,6 @@ export function BowtieDiagramComponent({
     );
   }
 
-  const preset =
-    ROLE_PRESETS.find((item) => item.id === activePreset) ?? CUSTOM_PRESET;
   const selectedDetails = getNodeDetails(
     selectedNodeId,
     diagram,
@@ -285,39 +214,6 @@ export function BowtieDiagramComponent({
   return (
     <div className="bowtie-shell">
       <header className="bowtie-toolbar">
-        <div className="bowtie-toolbar__group">
-          <label htmlFor="role-preset">Role preset</label>
-          <select
-            id="role-preset"
-            className="bowtie-select"
-            value={activePreset}
-            onChange={(event) => handlePresetChange(event.target.value)}
-          >
-            {ROLE_PRESETS.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.label}
-              </option>
-            ))}
-            <option value="custom">Custom view</option>
-          </select>
-          <span className="bowtie-toolbar__hint">{preset.description}</span>
-        </div>
-
-        <div className="bowtie-toolbar__group">
-          <label htmlFor="view-level">Detail level (0 - {maxLevel})</label>
-          <input
-            id="view-level"
-            className="bowtie-range"
-            type="range"
-            min={0}
-            max={maxLevel}
-            step={1}
-            value={viewLevel}
-            onChange={(event) => handleViewLevelChange(Number(event.target.value))}
-          />
-          <span className="bowtie-toolbar__hint">Current level: {viewLevel}</span>
-        </div>
-
         <div className="bowtie-toolbar__group bowtie-search-group">
           <label htmlFor="search-bowtie">Search</label>
           <input
@@ -328,7 +224,6 @@ export function BowtieDiagramComponent({
             value={filterText}
             onChange={(event) => {
               setFilterText(event.target.value);
-              setActivePreset('custom');
             }}
           />
         </div>
@@ -341,14 +236,13 @@ export function BowtieDiagramComponent({
             value={severityFilter}
             onChange={(event) => {
               setSeverityFilter(event.target.value as SeverityFilter);
-              setActivePreset('custom');
             }}
           >
             <option value="all">All severities</option>
+            <option value="low">Low only</option>
             <option value="medium">Medium +</option>
             <option value="high">High +</option>
             <option value="critical">Critical only</option>
-            <option value="low">Low only</option>
           </select>
         </div>
 
@@ -546,33 +440,39 @@ function createReactFlowGraph(
     draggable: true,
   };
 
-    if (layoutNode.type === 'threat') {
-      const threatId = layoutNode.id.replace('threat-', '');
-      const threat = threatMap[threatId];
-      base.data = {
-        ...base.data,
-        label: threat?.label ?? layoutNode.label,
-        severity: threat?.severity,
-        level: threat?.level ?? layoutNode.level,
-        description: threat?.description,
-        hasChildren: Boolean(threat?.subThreats?.length),
-        appearance: threat?.appearance,
-      };
-    }
+  if (layoutNode.type === 'threat') {
+    const threatId = layoutNode.id.replace('threat-', '');
+    const threat = threatMap[threatId];
+    base.data = {
+      ...base.data,
+      label: threat?.label ?? layoutNode.label,
+      severity: threat?.severity,
+      level: deriveSeverityLevel(
+        threat?.severity as Severity | undefined,
+        threat?.level ?? layoutNode.level,
+      ),
+      description: threat?.description,
+      hasChildren: Boolean(threat?.subThreats?.length),
+      appearance: threat?.appearance,
+    };
+  }
 
     if (layoutNode.type === 'consequence') {
       const consequenceId = layoutNode.id.replace('consequence-', '');
       const consequence = consequenceMap[consequenceId];
       base.data = {
-        ...base.data,
-        label: consequence?.label ?? layoutNode.label,
-        severity: consequence?.severity,
-        level: consequence?.level ?? layoutNode.level,
-        description: consequence?.description,
-        hasChildren: Boolean(consequence?.subConsequences?.length),
-        appearance: consequence?.appearance,
-      };
-    }
+      ...base.data,
+      label: consequence?.label ?? layoutNode.label,
+      severity: consequence?.severity,
+      level: deriveSeverityLevel(
+        consequence?.severity as Severity | undefined,
+        consequence?.level ?? layoutNode.level,
+      ),
+      description: consequence?.description,
+      hasChildren: Boolean(consequence?.subConsequences?.length),
+      appearance: consequence?.appearance,
+    };
+  }
 
     if (layoutNode.type === 'barrier') {
       const barrierId = extractBarrierId(layoutNode.id);
@@ -619,6 +519,13 @@ function createReactFlowGraph(
   return { nodes, edges };
 }
 
+const severityScale: Record<Severity, number> = {
+  low: 1,
+  medium: 2,
+  high: 3,
+  critical: 4,
+};
+
 function applyPresentation(nodes: Node[], filters: FilterState): Node[] {
   const normalizedText = filters.text.trim().toLowerCase();
   const severityActive = filters.severity !== 'all';
@@ -627,6 +534,7 @@ function applyPresentation(nodes: Node[], filters: FilterState): Node[] {
   return nodes.map((node) => {
     const labelContent = `${node.data?.label ?? ''} ${node.data?.description ?? ''}`.toLowerCase();
     const matchesText = normalizedText ? labelContent.includes(normalizedText) : false;
+
     const severityValue =
       node.data && node.data.severity
         ? severityScale[node.data.severity as Severity]
@@ -830,7 +738,10 @@ function getNodeDetails(
       label: threat.label,
       description: threat.description,
       severity: threat.severity,
-      level: threat.level,
+      level: deriveSeverityLevel(
+        threat.severity as Severity | undefined,
+        threat.level,
+      ),
       tags: threat.subThreats?.map((sub) => sub.label) ?? [],
     };
   }
@@ -858,7 +769,10 @@ function getNodeDetails(
       label: consequence.label,
       description: consequence.description,
       severity: consequence.severity,
-      level: consequence.level,
+      level: deriveSeverityLevel(
+        consequence.severity as Severity | undefined,
+        consequence.level,
+      ),
       tags: consequence.subConsequences?.map((sub) => sub.label) ?? [],
     };
   }
@@ -899,26 +813,6 @@ function getNodeDetails(
 function extractBarrierId(layoutNodeId: string) {
   const segments = layoutNodeId.split('-');
   return segments.length >= 3 ? segments.slice(2).join('-') : null;
-}
-
-function collectLevels(items: { level: number; subThreats?: any[]; subConsequences?: any[] }[]): number {
-  let max = 0;
-
-  const traverse = (list?: typeof items) => {
-    if (!list) return;
-    list.forEach((item) => {
-      max = Math.max(max, item.level ?? 0);
-      if ('subThreats' in item && item.subThreats) {
-        traverse(item.subThreats as any);
-      }
-      if ('subConsequences' in item && item.subConsequences) {
-        traverse(item.subConsequences as any);
-      }
-    });
-  };
-
-  traverse(items as any);
-  return max;
 }
 
 function buildThreatMap(threats: Threat[]): ThreatMap {

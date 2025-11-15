@@ -33,15 +33,7 @@ import { BowtieDiagramComponent } from './components/BowtieDiagram';
 import { carAccidentBowtie } from './lib/carAccidentData';
 
 function App() {
-  const [viewLevel, setViewLevel] = useState(0);
-  
-  return (
-    <BowtieDiagramComponent
-      diagram={carAccidentBowtie}
-      viewLevel={viewLevel}
-      onViewLevelChange={setViewLevel}
-    />
-  );
+  return <BowtieDiagramComponent diagram={carAccidentBowtie} />;
 }
 ```
 
