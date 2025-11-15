@@ -225,6 +225,61 @@
   color: #64748b;
 }
 
+.bowtie-validation {
+  padding: 0.8rem 1.5rem;
+  background: rgba(2, 6, 23, 0.9);
+  border-bottom: 1px solid rgba(248, 113, 113, 0.35);
+  color: #fecdd3;
+  font-size: 0.85rem;
+}
+
+.bowtie-validation__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+  margin-bottom: 0.35rem;
+  color: #fda4af;
+}
+
+.bowtie-validation__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.bowtie-validation__badge {
+  text-transform: uppercase;
+  font-size: 0.65rem;
+  letter-spacing: 0.05em;
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  margin-right: 0.5rem;
+  font-weight: 700;
+}
+
+.bowtie-validation__badge--error {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fecaca;
+  border: 1px solid rgba(248, 113, 113, 0.4);
+}
+
+.bowtie-validation__badge--warning {
+  background: rgba(250, 204, 21, 0.2);
+  color: #fef08a;
+  border: 1px solid rgba(251, 191, 36, 0.4);
+}
+
+.bowtie-validation__more {
+  margin-top: 0.4rem;
+  font-size: 0.75rem;
+  color: #fda4af;
+}
+
 .bowtie-panel-divider {
   height: 1px;
   background: rgba(15, 23, 42, 0.08);

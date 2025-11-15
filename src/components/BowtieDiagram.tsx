@@ -29,6 +29,7 @@ import { BarrierNode } from './BarrierNode';
 import { TopEventNode } from './TopEventNode';
 import { HazardNode } from './HazardNode';
 import { BowtieEdge } from './BowtieEdge';
+import { validateBowtieDiagram, type ValidationIssue } from '../lib/validation';
 
 type Severity = 'low' | 'medium' | 'high' | 'critical';
 type SeverityFilter = 'all' | Severity;
@@ -166,6 +167,10 @@ export function BowtieDiagramComponent({
     const consequenceLevels = collectLevels(diagram.consequences);
     return Math.max(threatLevels, consequenceLevels, 0);
   }, [diagram]);
+
+  const validationIssues = useMemo<ValidationIssue[]>(() => validateBowtieDiagram(diagram), [diagram]);
+  const visibleValidationIssues = useMemo(() => validationIssues.slice(0, 4), [validationIssues]);
+  const hiddenValidationCount = Math.max(0, validationIssues.length - visibleValidationIssues.length);
 
   const filters = useMemo<FilterState>(
     () => ({
@@ -389,6 +394,28 @@ export function BowtieDiagramComponent({
           </div>
         </div>
       </header>
+
+      {validationIssues.length > 0 ? (
+        <div className="bowtie-validation" role="status" aria-live="polite">
+          <div className="bowtie-validation__header">
+            <span>Diagram checks</span>
+            <span>{validationIssues.length} issue{validationIssues.length === 1 ? '' : 's'} detected</span>
+          </div>
+          <ul className="bowtie-validation__list">
+            {visibleValidationIssues.map((issue) => (
+              <li key={issue.id}>
+                <span className={`bowtie-validation__badge bowtie-validation__badge--${issue.severity}`}>
+                  {issue.severity}
+                </span>
+                {issue.message}
+              </li>
+            ))}
+          </ul>
+          {hiddenValidationCount > 0 && (
+            <p className="bowtie-validation__more">+{hiddenValidationCount} more not shown.</p>
+          )}
+        </div>
+      ) : null}
 
       <section className="bowtie-body">
         <div className="bowtie-canvas">

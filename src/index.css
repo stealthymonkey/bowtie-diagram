@@ -22,5 +22,43 @@ body {
   width: 100%;
   height: 100vh;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: #020617;
+}
+
+.app__header {
+  padding: 0.75rem 1.25rem;
+  background: rgba(2, 6, 23, 0.95);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.app__picker {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: #e2e8f0;
+  font-size: 0.85rem;
+}
+
+.app__picker label {
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+}
+
+.app__picker select {
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  background: rgba(15, 23, 42, 0.6);
+  color: #f8fafc;
+  padding: 0.4rem 0.9rem;
+}
+
+.app__content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
