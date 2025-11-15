@@ -116,13 +116,15 @@ const edgeTypes = {
 };
 
 const EDGE_STYLE: CSSProperties = {
-  stroke: '#0f172a',
-  strokeWidth: 2,
+  stroke: '#0ea5e9',
+  strokeWidth: 4,
+  strokeLinecap: 'round',
+  filter: 'drop-shadow(0 3px 6px rgba(14,165,233,0.35))',
 };
 
 const EDGE_MARKER = {
   type: MarkerType.ArrowClosed,
-  color: '#0f172a',
+  color: '#0ea5e9',
   width: 18,
   height: 18,
 };
@@ -676,6 +678,7 @@ function buildEdges(
     if (nodeIds.has(edge.source) && nodeIds.has(edge.target)) {
       edges.push({
         ...edge,
+        type: edge.type ?? 'bowtie',
         style: { ...(edge.style ?? {}), ...EDGE_STYLE },
         markerEnd: EDGE_MARKER,
       });
@@ -688,7 +691,7 @@ function buildEdges(
         id: `edge-${layoutNode.id}-topEvent`,
         source: layoutNode.id,
         target: topEventNodeId,
-        type: 'smoothstep',
+        type: 'bowtie',
       });
     }
 
@@ -697,7 +700,7 @@ function buildEdges(
         id: `edge-topEvent-${layoutNode.id}`,
         source: topEventNodeId,
         target: layoutNode.id,
-        type: 'smoothstep',
+        type: 'bowtie',
       });
     }
 
@@ -712,13 +715,13 @@ function buildEdges(
           id: `edge-threat-${barrier.threatId}-barrier-${barrier.id}`,
           source: `threat-${barrier.threatId}`,
           target: layoutNode.id,
-          type: 'smoothstep',
+          type: 'bowtie',
         });
         addEdge({
           id: `edge-barrier-${barrier.id}-topEvent`,
           source: layoutNode.id,
           target: topEventNodeId,
-          type: 'smoothstep',
+          type: 'bowtie',
         });
       }
 
@@ -727,13 +730,13 @@ function buildEdges(
           id: `edge-topEvent-barrier-${barrier.id}`,
           source: topEventNodeId,
           target: layoutNode.id,
-          type: 'smoothstep',
+          type: 'bowtie',
         });
         addEdge({
           id: `edge-barrier-${barrier.id}-consequence-${barrier.consequenceId}`,
           source: layoutNode.id,
           target: `consequence-${barrier.consequenceId}`,
-          type: 'smoothstep',
+          type: 'bowtie',
         });
       }
     }
@@ -743,7 +746,7 @@ function buildEdges(
         id: `edge-threat-parent-${layoutNode.id}`,
         source: `threat-${layoutNode.parentId}`,
         target: layoutNode.id,
-        type: 'smoothstep',
+        type: 'bowtie',
       });
     }
 
@@ -752,7 +755,7 @@ function buildEdges(
         id: `edge-consequence-parent-${layoutNode.id}`,
         source: `consequence-${layoutNode.parentId}`,
         target: layoutNode.id,
-        type: 'smoothstep',
+        type: 'bowtie',
       });
     }
   });
@@ -791,7 +794,7 @@ function createHazardReactFlowNode(
     id: `edge-${hazardNodeId}-topEvent`,
     source: hazardNodeId,
     target: topEventNode.id,
-    type: 'smoothstep',
+    type: 'bowtie',
     style: EDGE_STYLE,
     markerEnd: EDGE_MARKER,
   };
