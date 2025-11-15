@@ -58,7 +58,8 @@ export async function layoutBowtieDiagram(
 
   try {
     const layoutedGraph = await elk.layout(elkGraph);
-    return convertElkToLayoutNodes(layoutedGraph);
+    const nodes = convertElkToLayoutNodes(layoutedGraph);
+    return distributeBarriers(nodes);
   } catch (error) {
     console.error('ELK layout error:', error);
     throw error;
@@ -248,6 +249,67 @@ function convertElkToLayoutNodes(elkGraph: any): LayoutNode[] {
   if (elkGraph.children) {
     elkGraph.children.forEach((child: any) => traverse(child, 0, 0));
   }
+
+  return nodes;
+}
+
+function distributeBarriers(nodes: LayoutNode[]): LayoutNode[] {
+  const nodeMap = new Map(nodes.map((node) => [node.id, node]));
+  const DEFAULT_BARRIER_WIDTH = 160;
+  const DEFAULT_BARRIER_HEIGHT = 60;
+  const DEFAULT_PARENT_WIDTH = 180;
+  const DEFAULT_PARENT_HEIGHT = 80;
+  const HORIZONTAL_GAP = 60;
+  const VERTICAL_GAP = 24;
+
+  interface BarrierGroup {
+    parentId: string;
+    side: 'left' | 'right';
+    nodes: LayoutNode[];
+  }
+
+  const groups = new Map<string, BarrierGroup>();
+
+  nodes.forEach((node) => {
+    if (node.type !== 'barrier' || !node.parentId) return;
+    const isPreventive = node.id.startsWith('barrier-preventive');
+    const parentKey = `${isPreventive ? 'threat' : 'consequence'}-${node.parentId}`;
+    if (!nodeMap.has(parentKey)) return;
+    const side = isPreventive ? 'left' : 'right';
+    const groupKey = `${parentKey}|${side}`;
+    if (!groups.has(groupKey)) {
+      groups.set(groupKey, { parentId: parentKey, side, nodes: [] });
+    }
+    groups.get(groupKey)!.nodes.push(node);
+  });
+
+  groups.forEach((group) => {
+    const parent = nodeMap.get(group.parentId);
+    if (!parent) return;
+    const parentHeight = parent.height ?? DEFAULT_PARENT_HEIGHT;
+    const parentWidth = parent.width ?? DEFAULT_PARENT_WIDTH;
+    const parentCenterY = (parent.y ?? 0) + parentHeight / 2;
+
+    const sorted = group.nodes.sort((a, b) => (a.y ?? 0) - (b.y ?? 0));
+    const totalHeight = sorted.reduce((acc, barrier, index) => {
+      const height = barrier.height ?? DEFAULT_BARRIER_HEIGHT;
+      return acc + height + (index > 0 ? VERTICAL_GAP : 0);
+    }, 0);
+
+    let currentY = parentCenterY - totalHeight / 2;
+    sorted.forEach((barrier) => {
+      const barrierHeight = barrier.height ?? DEFAULT_BARRIER_HEIGHT;
+      const barrierWidth = barrier.width ?? DEFAULT_BARRIER_WIDTH;
+      barrier.y = currentY;
+      currentY += barrierHeight + VERTICAL_GAP;
+
+      if (group.side === 'left') {
+        barrier.x = (parent.x ?? 0) - HORIZONTAL_GAP - barrierWidth;
+      } else {
+        barrier.x = (parent.x ?? 0) + parentWidth + HORIZONTAL_GAP;
+      }
+    });
+  });
 
   return nodes;
 }
