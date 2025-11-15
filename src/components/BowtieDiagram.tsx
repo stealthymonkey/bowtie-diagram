@@ -783,6 +783,10 @@ function createHazardReactFlowNode(
   const hazardY = (topEventNode.position.y ?? 0) - HAZARD_NODE_HEIGHT - HAZARD_VERTICAL_GAP;
 
   const hazardNodeId = `hazard-${hazard.id}`;
+  const hazardCenterX = hazardX + HAZARD_NODE_WIDTH / 2;
+  const hazardBottomY = hazardY + HAZARD_NODE_HEIGHT;
+  const topEventTopY = topEventNode.position.y ?? 0;
+
   const hazardNode: Node = {
     id: hazardNodeId,
     type: 'hazard',
@@ -810,6 +814,9 @@ function createHazardReactFlowNode(
     type: 'bowtie',
     style: { ...HAZARD_CONNECTION.style },
     markerEnd: HAZARD_CONNECTION.markerEnd,
+    data: {
+      customPath: `M ${hazardCenterX} ${hazardBottomY} L ${hazardCenterX} ${topEventTopY}`,
+    },
   };
 
   return { node: hazardNode, edge: hazardEdge };
