@@ -104,6 +104,7 @@ function createThreatNode(threat: Threat, allBarriers: Barrier[]): any {
       type: 'threat',
       level: threat.level,
       severity: threat.severity,
+      parentId: threat.parentId,
     },
     children: preventiveBarriers.map(barrier => ({
       id: `barrier-preventive-${barrier.id}`,
@@ -144,6 +145,7 @@ function createConsequenceNode(consequence: Consequence, allBarriers: Barrier[])
       type: 'consequence',
       level: consequence.level,
       severity: consequence.severity,
+      parentId: consequence.parentId,
     },
     children: mitigativeBarriers.map(barrier => ({
       id: `barrier-mitigative-${barrier.id}`,

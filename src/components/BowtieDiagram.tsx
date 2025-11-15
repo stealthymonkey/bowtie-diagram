@@ -4,6 +4,7 @@ import {
   ReactFlow,
   Background,
   Controls,
+  MarkerType,
   type Edge,
   type Node,
   type NodeTypes,
@@ -105,6 +106,18 @@ const nodeTypes: NodeTypes = {
   barrier: BarrierNode,
   topEvent: TopEventNode,
   hazard: HazardNode,
+};
+
+const EDGE_STYLE: CSSProperties = {
+  stroke: '#0f172a',
+  strokeWidth: 2,
+};
+
+const EDGE_MARKER = {
+  type: MarkerType.ArrowClosed,
+  color: '#0f172a',
+  width: 18,
+  height: 18,
 };
 
 export function BowtieDiagramComponent({
@@ -633,7 +646,11 @@ function buildEdges(
 
   const addEdge = (edge: Edge) => {
     if (nodeIds.has(edge.source) && nodeIds.has(edge.target)) {
-      edges.push(edge);
+      edges.push({
+        ...edge,
+        style: { ...(edge.style ?? {}), ...EDGE_STYLE },
+        markerEnd: EDGE_MARKER,
+      });
     }
   };
 
@@ -692,6 +709,24 @@ function buildEdges(
         });
       }
     }
+
+    if (layoutNode.type === 'threat' && layoutNode.parentId) {
+      addEdge({
+        id: `edge-threat-parent-${layoutNode.id}`,
+        source: `threat-${layoutNode.parentId}`,
+        target: layoutNode.id,
+        type: 'smoothstep',
+      });
+    }
+
+    if (layoutNode.type === 'consequence' && layoutNode.parentId) {
+      addEdge({
+        id: `edge-consequence-parent-${layoutNode.id}`,
+        source: `consequence-${layoutNode.parentId}`,
+        target: layoutNode.id,
+        type: 'smoothstep',
+      });
+    }
   });
 
   return edges;
@@ -727,6 +762,8 @@ function createHazardReactFlowNode(
     source: hazardNodeId,
     target: topEventNode.id,
     type: 'smoothstep',
+    style: EDGE_STYLE,
+    markerEnd: EDGE_MARKER,
   };
 
   return { node: hazardNode, edge: hazardEdge };
