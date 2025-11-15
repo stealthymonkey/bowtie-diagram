@@ -28,6 +28,7 @@ import { ConsequenceNode } from './ConsequenceNode';
 import { BarrierNode } from './BarrierNode';
 import { TopEventNode } from './TopEventNode';
 import { HazardNode } from './HazardNode';
+import { BowtieEdge } from './BowtieEdge';
 
 type Severity = 'low' | 'medium' | 'high' | 'critical';
 type SeverityFilter = 'all' | Severity;
@@ -110,6 +111,10 @@ const nodeTypes: NodeTypes = {
   hazard: HazardNode,
 };
 
+const edgeTypes = {
+  bowtie: BowtieEdge,
+};
+
 const EDGE_STYLE: CSSProperties = {
   stroke: '#0f172a',
   strokeWidth: 2,
@@ -123,7 +128,7 @@ const EDGE_MARKER = {
 };
 
 const DEFAULT_EDGE_OPTIONS = {
-  type: 'smoothstep' as const,
+  type: 'bowtie' as const,
   style: EDGE_STYLE,
   markerEnd: EDGE_MARKER,
 };
@@ -389,6 +394,7 @@ export function BowtieDiagramComponent({
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           defaultEdgeOptions={DEFAULT_EDGE_OPTIONS}
           fitView
           minZoom={0.25}
