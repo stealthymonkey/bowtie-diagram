@@ -1,5 +1,14 @@
-import { memo } from 'react';
-import type { NodeProps } from '@xyflow/react';
+import { memo, type CSSProperties } from 'react';
+import { Handle, Position, type NodeProps } from '@xyflow/react';
+
+const handleStyle: CSSProperties = {
+  width: 16,
+  height: 16,
+  borderRadius: '50%',
+  border: '2px solid #f97316',
+  background: '#fff',
+  boxShadow: '0 0 0 4px rgba(249, 115, 22, 0.2)',
+};
 
 export const HazardNode = memo(({ data }: NodeProps) => {
   const dimmed = data.dimmed;
@@ -22,6 +31,8 @@ export const HazardNode = memo(({ data }: NodeProps) => {
         fontWeight: 700,
       }}
     >
+      <Handle id="top" type="target" position={Position.Top} style={handleStyle} />
+      <Handle id="bottom" type="source" position={Position.Bottom} style={handleStyle} />
       <div
         style={{
           background:

@@ -1,5 +1,5 @@
-import { memo } from 'react';
-import type { NodeProps } from '@xyflow/react';
+import { memo, type CSSProperties } from 'react';
+import { Handle, Position, type NodeProps } from '@xyflow/react';
 
 const severityPalette: Record<string, { bg: string; border: string }> = {
   low: { bg: '#dbeafe', border: '#60a5fa' },
@@ -8,12 +8,22 @@ const severityPalette: Record<string, { bg: string; border: string }> = {
   critical: { bg: '#818cf8', border: '#4338ca' },
 };
 
+const createHandleStyle = (color: string): CSSProperties => ({
+  width: 14,
+  height: 14,
+  borderRadius: '50%',
+  border: `2px solid ${color}`,
+  background: '#0f172a',
+  boxShadow: '0 0 0 3px rgba(15, 23, 42, 0.25)',
+});
+
 export const ThreatNode = memo(({ data }: NodeProps) => {
   const severity = data.severity || 'medium';
   const palette = severityPalette[severity] ?? severityPalette.medium;
   const dimmed = data.dimmed;
   const selected = data.selected;
   const highlighted = data.highlighted;
+  const handleStyle = createHandleStyle(palette.border);
 
   return (
     <div
@@ -32,6 +42,8 @@ export const ThreatNode = memo(({ data }: NodeProps) => {
         fontWeight: 600,
       }}
     >
+      <Handle type="target" position={Position.Left} style={handleStyle} />
+      <Handle type="source" position={Position.Right} style={handleStyle} />
       <div
         style={{
           display: 'flex',

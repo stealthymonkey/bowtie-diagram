@@ -794,6 +794,8 @@ function createHazardReactFlowNode(
     id: `edge-${hazardNodeId}-topEvent`,
     source: hazardNodeId,
     target: topEventNode.id,
+    sourceHandle: 'bottom',
+    targetHandle: 'top',
     type: 'bowtie',
     style: EDGE_STYLE,
     markerEnd: EDGE_MARKER,
