@@ -43,16 +43,6 @@ export const mitigativeBarriers: Barrier[] = [
     owner: 'Engineering Manager',
   },
   {
-    id: 'barrier-rollover-response',
-    label: 'Rollover rapid response plan',
-    description: 'Automatic incident alerting dispatches emergency services and hazmat teams.',
-    type: 'mitigative',
-    effectiveness: 'medium',
-    consequenceId: 'consequence-rollover',
-    mechanism: 'hybrid',
-    owner: 'Emergency Coordinator',
-  },
-  {
     id: 'barrier-rollover-protection',
     label: 'Rollover protection (reinforced structure)',
     description: 'Reinforced cabs and side structures keep the vehicle occupant space intact during roll-over events.',
