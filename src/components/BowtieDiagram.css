@@ -35,11 +35,11 @@
 }
 
 .bowtie-toolbar label {
-  font-size: 0.85rem;
+  font-size: 1.05rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #cbd5f5;
-  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #e2e8ff;
+  font-weight: 700;
 }
 
 .bowtie-select,
@@ -49,9 +49,10 @@
   border: 1px solid rgba(148, 163, 184, 0.6);
   background: rgba(15, 23, 42, 0.6);
   color: #f8fafc;
-  padding: 0.5rem 1rem;
-  font-size: 0.95rem;
-  font-weight: 500;
+  padding: 0.65rem 1.1rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 .bowtie-select:focus,
@@ -59,6 +60,11 @@
 .bowtie-range:focus {
   outline: 2px solid #38bdf8;
   border-color: transparent;
+}
+
+.bowtie-select option {
+  font-size: 1.05rem;
+  color: #0f172a;
 }
 
 .bowtie-range {
