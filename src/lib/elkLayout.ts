@@ -25,8 +25,9 @@ const DEFAULT_BARRIER_NODE_WIDTH = 240;
 const DEFAULT_BARRIER_NODE_HEIGHT = 120;
 const BARRIER_HORIZONTAL_GAP = 80;
 const BARRIER_VERTICAL_GAP = 32;
-const PRIMARY_NODE_VERTICAL_GAP = 48;
-const THREAT_COLUMN_MAX_SPAN = 360;
+const PRIMARY_NODE_DEFAULT_GAP = 72;
+const PRIMARY_NODE_MIN_GAP = 48;
+const THREAT_COLUMN_MAX_SPAN = 300;
 
 /**
  * Converts bowtie diagram to ELK graph structure
@@ -286,7 +287,7 @@ function compactPrimaryNodes(nodes: LayoutNode[]): LayoutNode[] {
       (sum, node) => sum + (node.height ?? DEFAULT_PARENT_NODE_HEIGHT),
       0,
     );
-    let gap = PRIMARY_NODE_VERTICAL_GAP;
+    let gap = PRIMARY_NODE_DEFAULT_GAP;
     if (options?.maxSpan) {
       const maxSpan = Math.max(options.maxSpan, sumHeights);
       const availableGapSpace = maxSpan - sumHeights;
@@ -298,12 +299,56 @@ function compactPrimaryNodes(nodes: LayoutNode[]): LayoutNode[] {
       column.reduce((sum, node) => sum + (node.y ?? 0), 0) / column.length;
     let currentY = anchor - totalHeight / 2;
 
-    column
-      .sort((a, b) => (a.y ?? 0) - (b.y ?? 0))
-      .forEach((node) => {
-        node.y = currentY;
-        currentY += (node.height ?? DEFAULT_PARENT_NODE_HEIGHT) + gap;
+    const ordered = column.sort((a, b) => (a.y ?? 0) - (b.y ?? 0));
+    ordered.forEach((node) => {
+      node.y = currentY;
+      currentY += (node.height ?? DEFAULT_PARENT_NODE_HEIGHT) + gap;
+    });
+
+    if (options?.maxSpan && ordered.length > 1) {
+      const top = ordered[0].y ?? 0;
+      const bottom =
+        (ordered[ordered.length - 1].y ?? 0) +
+        (ordered[ordered.length - 1].height ?? DEFAULT_PARENT_NODE_HEIGHT);
+      const span = bottom - top;
+      if (span > options.maxSpan) {
+        const overshoot = span - options.maxSpan;
+        const count = ordered.length;
+        ordered.forEach((node, index) => {
+          const ratio = count === 1 ? 0.5 : index / (count - 1);
+          const edgeDistance = Math.min(ratio, 1 - ratio);
+          const strength = 1 - edgeDistance / 0.5;
+          const direction = 0.5 - ratio;
+          node.y += overshoot * direction * strength;
+        });
+      }
+    }
+
+    let lastBottom = Number.NEGATIVE_INFINITY;
+    ordered.forEach((node, index) => {
+      const height = node.height ?? DEFAULT_PARENT_NODE_HEIGHT;
+      if (index === 0) {
+        lastBottom = (node.y ?? 0) + height;
+        return;
+      }
+      const minY = lastBottom + PRIMARY_NODE_MIN_GAP;
+      if ((node.y ?? 0) < minY) {
+        node.y = minY;
+      }
+      lastBottom = (node.y ?? 0) + height;
+    });
+
+    const orderedTop = ordered[0].y ?? 0;
+    const orderedBottom =
+      (ordered[ordered.length - 1].y ?? 0) +
+      (ordered[ordered.length - 1].height ?? DEFAULT_PARENT_NODE_HEIGHT);
+    const orderedCenter = (orderedTop + orderedBottom) / 2;
+    const shift = anchor - orderedCenter;
+    if (shift) {
+      ordered.forEach((node) => {
+        node.y = (node.y ?? 0) + shift;
       });
+    }
   };
 
   alignColumn('threat', { maxSpan: THREAT_COLUMN_MAX_SPAN });
