@@ -43,16 +43,6 @@ export const preventiveBarriers: Barrier[] = [
     owner: 'Safety Supervisor',
   },
   {
-    id: 'barrier-distraction-coaching',
-    label: 'In-cab distraction coaching',
-    description: 'Onboard camera analytics notify coach who provides immediate feedback to driver.',
-    type: 'preventive',
-    effectiveness: 'medium',
-    threatId: 'threat-distracted-driving',
-    mechanism: 'hybrid',
-    owner: 'Driver Coach',
-  },
-  {
     id: 'barrier-weather-schedule-adjustment',
     label: 'Driver listens to weather report and adjusts driving schedule to avoid rain',
     description: 'Drivers monitor forecasts and reschedule departures to avoid heavy rain on the route.',
@@ -91,16 +81,6 @@ export const preventiveBarriers: Barrier[] = [
     threatId: 'threat-slippery-road',
     mechanism: 'activeHuman',
     owner: 'Route Planner',
-  },
-  {
-    id: 'barrier-visibility-protocol',
-    label: 'Low-visibility protocol',
-    description: 'Requires convoy escort and reduced speed when visibility drops below threshold.',
-    type: 'preventive',
-    effectiveness: 'medium',
-    threatId: 'threat-poor-visibility',
-    mechanism: 'activeHuman',
-    owner: 'Shift Supervisor',
   },
   {
     id: 'barrier-voice-dispatch',
