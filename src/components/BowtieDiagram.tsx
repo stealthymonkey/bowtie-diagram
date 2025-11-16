@@ -107,6 +107,7 @@ export function BowtieDiagramComponent({
   const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
   const [barrierOffsets, setBarrierOffsets] = useState<Record<string, { y: number }>>({});
+  const [barrierOrder, setBarrierOrder] = useState<Record<string, number>>({});
   const inlineBarrierLayoutRef = useRef<Record<string, { x: number; y: number }>>({});
 
   const threatMap = useMemo(() => buildThreatMap(diagram.threats), [diagram]);
@@ -149,7 +150,7 @@ export function BowtieDiagramComponent({
     layoutBowtieDiagram(diagram, { viewLevel: Number.POSITIVE_INFINITY })
       .then((layoutedNodes) => {
         if (cancelled) return;
-        const { nodes: rfNodes, edges: rfEdges } = createReactFlowGraph(
+        const { nodes: rfNodes, edges: rfEdges, barrierOrder: orderMap } = createReactFlowGraph(
           layoutedNodes,
           diagram,
           threatMap,
@@ -158,6 +159,7 @@ export function BowtieDiagramComponent({
         );
         setRawNodes(rfNodes);
         setBaseEdges(rfEdges);
+        setBarrierOrder(orderMap);
         setLoading(false);
       })
       .catch((err) => {
@@ -184,6 +186,7 @@ export function BowtieDiagramComponent({
       scoped.nodes,
       focusedNodeId,
       barrierOffsets,
+      barrierOrder,
     );
     inlineBarrierLayoutRef.current = inlinePositions;
     setEdges(scoped.edges);
@@ -192,7 +195,7 @@ export function BowtieDiagramComponent({
     if (reactFlowInstance) {
       reactFlowInstance.fitView({ padding: 0.15, duration: 300 });
     }
-  }, [rawNodes, baseEdges, filters, focusedNodeId, barrierOffsets, reactFlowInstance]);
+  }, [rawNodes, baseEdges, filters, focusedNodeId, barrierOffsets, barrierOrder, reactFlowInstance]);
 
   const handleZoom = (direction: 'in' | 'out' | 'reset') => {
     if (!reactFlowInstance) return;
@@ -527,6 +530,7 @@ function createReactFlowGraph(
   consequenceMap: ConsequenceMap,
   barrierMap: Map<string, Barrier>
 ) {
+  const barrierOrder = computeBarrierOrder(layoutNodes);
   const nodes = layoutNodes.map((layoutNode) => {
     const base: Node = {
       id: layoutNode.id,
@@ -628,7 +632,7 @@ function createReactFlowGraph(
     }
   }
 
-  return { nodes, edges };
+  return { nodes, edges, barrierOrder };
 }
 
 const severityScale: Record<Severity, number> = {
@@ -991,10 +995,35 @@ function buildConsequenceMap(consequences: Consequence[]): ConsequenceMap {
   return map;
 }
 
+function computeBarrierOrder(layoutNodes: LayoutNode[]): Record<string, number> {
+  const order: Record<string, number> = {};
+  const groups = new Map<string, LayoutNode[]>();
+  layoutNodes.forEach((node) => {
+    if (node.type !== 'barrier' || !node.parentId) return;
+    const isPreventive = node.id.startsWith('barrier-preventive');
+    const parentKey = `${isPreventive ? 'threat' : 'consequence'}-${node.parentId}`;
+    if (!groups.has(parentKey)) {
+      groups.set(parentKey, []);
+    }
+    groups.get(parentKey)!.push(node);
+  });
+
+  groups.forEach((groupNodes) => {
+    groupNodes
+      .sort((a, b) => (a.x ?? 0) - (b.x ?? 0))
+      .forEach((node, index) => {
+        order[node.id] = index;
+      });
+  });
+
+  return order;
+}
+
 function applyFocusLayout(
   nodes: Node[],
   focusedNodeId: string | null,
   barrierOffsets: Record<string, { y: number }> = {},
+  barrierOrder: Record<string, number> = {},
 ): { nodes: Node[]; inlinePositions: Record<string, { x: number; y: number }> } {
   if (!focusedNodeId) {
     return { nodes, inlinePositions: {} };
@@ -1026,9 +1055,16 @@ function applyFocusLayout(
   const startHeight = startNode.height ?? DEFAULT_PARENT_NODE_HEIGHT;
   const baselineY = (startNode.position?.y ?? 0) + startHeight / 2;
 
-  const sortedBarriers = [...barrierNodes].sort(
-    (a, b) => (a.position?.x ?? 0) - (b.position?.x ?? 0),
-  );
+  const sortedBarriers = [...barrierNodes].sort((a, b) => {
+    const orderA = barrierOrder[a.id];
+    const orderB = barrierOrder[b.id];
+    if (orderA !== undefined && orderB !== undefined) {
+      return orderA - orderB;
+    }
+    if (orderA !== undefined) return -1;
+    if (orderB !== undefined) return 1;
+    return (a.position?.x ?? 0) - (b.position?.x ?? 0);
+  });
 
   let previousEndX = (startNode.position?.x ?? 0) + startWidth;
   let previousBottom = (startNode.position?.y ?? 0) - startHeight / 2;
