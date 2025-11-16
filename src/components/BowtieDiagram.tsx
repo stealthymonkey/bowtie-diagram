@@ -195,12 +195,17 @@ export function BowtieDiagramComponent({
 
   const handleNodeDoubleClick = useCallback(
     (_: any, node: Node) => {
+      if (node.id === focusedNodeId) {
+        setFocusedNodeId(null);
+        return;
+      }
+
       if (node.type === 'threat' || node.type === 'consequence') {
         setFocusedNodeId(node.id);
         setSelectedNodeId(node.id);
       }
     },
-    [],
+    [focusedNodeId],
   );
 
   const focusLabel = useMemo(() => {
@@ -895,28 +900,31 @@ function filterGraphForFocus(
     return { nodes: [], edges: [] };
   }
 
+  if (!focusedNodeId) {
+    return { nodes, edges };
+  }
+
   const allowedIds = new Set<string>();
+  const hazardNode = nodes.find((node) => node.type === 'hazard');
+  const topEventNode = nodes.find((node) => node.type === 'topEvent');
+  if (hazardNode) allowedIds.add(hazardNode.id);
+  if (topEventNode) allowedIds.add(topEventNode.id);
+  allowedIds.add(focusedNodeId);
+
+  const focusIsThreat = focusedNodeId.startsWith('threat-');
+  const focusKey = focusedNodeId.replace(/^(threat|consequence)-/, '');
+
   nodes.forEach((node) => {
-    if (node.type !== 'barrier') {
+    if (node.type !== 'barrier') return;
+    const relatedThreat = node.data?.relatedThreatId;
+    const relatedConsequence = node.data?.relatedConsequenceId;
+    if (focusIsThreat && relatedThreat === focusKey) {
+      allowedIds.add(node.id);
+    }
+    if (!focusIsThreat && relatedConsequence === focusKey) {
       allowedIds.add(node.id);
     }
   });
-
-  if (focusedNodeId) {
-    const focusIsThreat = focusedNodeId.startsWith('threat-');
-    const focusKey = focusedNodeId.replace(/^(threat|consequence)-/, '');
-    nodes.forEach((node) => {
-      if (node.type !== 'barrier') return;
-      const relatedThreat = node.data?.relatedThreatId;
-      const relatedConsequence = node.data?.relatedConsequenceId;
-      if (focusIsThreat && relatedThreat === focusKey) {
-        allowedIds.add(node.id);
-      }
-      if (!focusIsThreat && relatedConsequence === focusKey) {
-        allowedIds.add(node.id);
-      }
-    });
-  }
 
   const filteredNodes = nodes.filter((node) => allowedIds.has(node.id));
   const allowedEdgeNodes = new Set(filteredNodes.map((node) => node.id));
