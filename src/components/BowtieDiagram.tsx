@@ -1073,18 +1073,21 @@ function applyFocusLayout(
         }
       }
     }
-    if (hazardNode) {
-      const hazardRef = nodeMap.get(hazardNode.id);
-      if (hazardRef) {
-        const endWidth = endRef.width ?? TOP_EVENT_NODE_SIZE;
-        const hazardWidth = hazardRef.width ?? HAZARD_NODE_WIDTH;
-        hazardRef.position.x =
-          (endRef.position?.x ?? 0) + (endWidth - hazardWidth) / 2;
-        const hazardHeight = hazardRef.height ?? HAZARD_NODE_HEIGHT;
-        hazardRef.position.y =
-          (endRef.position?.y ?? 0) - hazardHeight - HAZARD_VERTICAL_GAP;
-      }
-    }
+  }
+
+  const hazardRef =
+    hazardNode && nodeMap.has(hazardNode.id)
+      ? nodeMap.get(hazardNode.id)
+      : null;
+  const topEventRef = nodeMap.get(topEventNode.id);
+  if (hazardRef && topEventRef) {
+    const topWidth = topEventRef.width ?? TOP_EVENT_NODE_SIZE;
+    const hazardWidth = hazardRef.width ?? HAZARD_NODE_WIDTH;
+    hazardRef.position.x =
+      (topEventRef.position?.x ?? 0) + (topWidth - hazardWidth) / 2;
+    const hazardHeight = hazardRef.height ?? HAZARD_NODE_HEIGHT;
+    hazardRef.position.y =
+      (topEventRef.position?.y ?? 0) - hazardHeight - HAZARD_VERTICAL_GAP;
   }
 
   return { nodes: updatedNodes, inlinePositions };
