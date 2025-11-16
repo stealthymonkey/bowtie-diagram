@@ -25,11 +25,10 @@ const DEFAULT_BARRIER_NODE_WIDTH = 240;
 const DEFAULT_BARRIER_NODE_HEIGHT = 120;
 const BARRIER_HORIZONTAL_GAP = 80;
 const BARRIER_VERTICAL_GAP = 32;
-const PRIMARY_NODE_DEFAULT_GAP = 84;
+const PRIMARY_NODE_DEFAULT_GAP = 72;
 const PRIMARY_NODE_MIN_GAP = 12;
-const THREAT_COLUMN_MAX_SPAN = 320;
 const THREAT_COLUMN_EDGE_BOUND = 190;
-const CONSEQUENCE_COLUMN_EDGE_BOUND = 130;
+const CONSEQUENCE_COLUMN_EDGE_BOUND = 145;
 
 /**
  * Converts bowtie diagram to ELK graph structure
@@ -276,7 +275,7 @@ function compactPrimaryNodes(nodes: LayoutNode[]): LayoutNode[] {
 
   const alignColumn = (
     type: LayoutNode['type'],
-    options?: { maxSpan?: number; gap?: number; edgeBound?: number },
+    options?: { gap?: number; edgeBound?: number; minGap?: number },
   ) => {
     const column = nodes.filter(
       (node) => node.type === type && !node.parentId,
@@ -289,12 +288,18 @@ function compactPrimaryNodes(nodes: LayoutNode[]): LayoutNode[] {
       (sum, node) => sum + (node.height ?? DEFAULT_PARENT_NODE_HEIGHT),
       0,
     );
-    const baseGap = options?.gap ?? PRIMARY_NODE_DEFAULT_GAP;
-    const targetSpan = options?.maxSpan ?? sumHeights + baseGap * (column.length - 1);
-    const minSpan = sumHeights + PRIMARY_NODE_MIN_GAP * (column.length - 1);
-    const totalHeight = Math.max(targetSpan, minSpan);
-    const effectiveGap =
-      column.length > 1 ? (totalHeight - sumHeights) / (column.length - 1) : 0;
+    const desiredGap = options?.gap ?? PRIMARY_NODE_DEFAULT_GAP;
+    const minGap = options?.minGap ?? PRIMARY_NODE_MIN_GAP;
+    const rangeLimit = options?.edgeBound ? options.edgeBound * 2 : null;
+    let gap = desiredGap;
+    if (rangeLimit && column.length > 1) {
+      const maxGap = (rangeLimit - sumHeights) / (column.length - 1);
+      if (Number.isFinite(maxGap)) {
+        gap = Math.min(gap, maxGap);
+      }
+    }
+    gap = Math.max(gap, minGap);
+    const totalHeight = sumHeights + gap * (column.length - 1);
     const anchor =
       topEventCenterY ??
       column.reduce((sum, node) => sum + (node.y ?? 0), 0) / column.length;
@@ -303,57 +308,30 @@ function compactPrimaryNodes(nodes: LayoutNode[]): LayoutNode[] {
     const ordered = column.sort((a, b) => (a.y ?? 0) - (b.y ?? 0));
     ordered.forEach((node) => {
       node.y = currentY;
-      currentY += (node.height ?? DEFAULT_PARENT_NODE_HEIGHT) + effectiveGap;
+      currentY += (node.height ?? DEFAULT_PARENT_NODE_HEIGHT) + gap;
     });
 
-    if (options?.maxSpan && ordered.length > 1) {
-      const top = ordered[0].y ?? 0;
-      const bottom =
-        (ordered[ordered.length - 1].y ?? 0) +
-        (ordered[ordered.length - 1].height ?? DEFAULT_PARENT_NODE_HEIGHT);
-      const span = bottom - top;
-      if (span > options.maxSpan) {
-        const overshoot = span - options.maxSpan;
-        const count = ordered.length;
-        ordered.forEach((node, index) => {
-          const ratio = count === 1 ? 0.5 : index / (count - 1);
-          const edgeDistance = Math.min(ratio, 1 - ratio);
-          const strength = 1 - edgeDistance / 0.5;
-          const direction = 0.5 - ratio;
-          node.y += overshoot * direction * strength;
-        });
-      }
-    }
-
-    if (options?.edgeBound && ordered.length > 1) {
-      const range = options.edgeBound * 2;
-      const step = range / (ordered.length - 1);
-      const startCenter = anchor - options.edgeBound;
-      ordered.forEach((node, index) => {
-        const height = node.height ?? DEFAULT_PARENT_NODE_HEIGHT;
-        const center = startCenter + step * index;
-        node.y = center - height / 2;
+    const orderedTop = ordered[0].y ?? 0;
+    const orderedBottom =
+      (ordered[ordered.length - 1].y ?? 0) +
+      (ordered[ordered.length - 1].height ?? DEFAULT_PARENT_NODE_HEIGHT);
+    const orderedCenter = (orderedTop + orderedBottom) / 2;
+    const shift = anchor - orderedCenter;
+    if (shift) {
+      ordered.forEach((node) => {
+        node.y = (node.y ?? 0) + shift;
       });
-    } else {
-      const orderedTop = ordered[0].y ?? 0;
-      const orderedBottom =
-        (ordered[ordered.length - 1].y ?? 0) +
-        (ordered[ordered.length - 1].height ?? DEFAULT_PARENT_NODE_HEIGHT);
-      const orderedCenter = (orderedTop + orderedBottom) / 2;
-      const shift = anchor - orderedCenter;
-      if (shift) {
-        ordered.forEach((node) => {
-          node.y = (node.y ?? 0) + shift;
-        });
-      }
     }
   };
 
   alignColumn('threat', {
-    maxSpan: THREAT_COLUMN_MAX_SPAN,
+    gap: 18,
+    minGap: 16,
     edgeBound: THREAT_COLUMN_EDGE_BOUND,
   });
   alignColumn('consequence', {
+    gap: 18,
+    minGap: 16,
     edgeBound: CONSEQUENCE_COLUMN_EDGE_BOUND,
   });
   return nodes;
