@@ -48,9 +48,15 @@ export const BarrierNode = memo(({ data }: NodeProps) => {
         borderRadius: '12px',
         padding: '10px 14px',
         minWidth: '160px',
+        maxWidth: '260px',
+        width: 'fit-content',
         boxShadow: highlighted
           ? '0 12px 24px rgba(15, 118, 110, 0.25)'
           : '0 6px 14px rgba(148, 163, 184, 0.3)',
+        wordBreak: 'break-word',
+        whiteSpace: 'normal',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       <Handle type="target" position={Position.Left} style={invisibleHandleStyle} />
@@ -66,7 +72,16 @@ export const BarrierNode = memo(({ data }: NodeProps) => {
       >
         {colors.label}
       </div>
-      <div style={{ fontWeight: 600, color: '#0f172a', lineHeight: 1.3 }}>{data.label}</div>
+      <div
+        style={{
+          fontWeight: 600,
+          color: '#0f172a',
+          lineHeight: 1.3,
+          wordBreak: 'break-word',
+        }}
+      >
+        {data.label}
+      </div>
       {data.effectiveness && (
         <div
           style={{

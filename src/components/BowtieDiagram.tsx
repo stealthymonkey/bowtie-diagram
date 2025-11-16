@@ -64,9 +64,10 @@ const HAZARD_VERTICAL_GAP = 40;
 const TOP_EVENT_NODE_SIZE = 200;
 const DEFAULT_PARENT_NODE_WIDTH = 180;
 const DEFAULT_PARENT_NODE_HEIGHT = 80;
-const DEFAULT_BARRIER_NODE_WIDTH = 160;
+const DEFAULT_BARRIER_NODE_WIDTH = 180;
 const DEFAULT_BARRIER_NODE_HEIGHT = 60;
 const FOCUS_BARRIER_GAP = 36;
+const FOCUS_VERTICAL_RANGE = 140;
 
 const severityLevelMap: Record<Severity, number> = {
   low: 1,
@@ -104,7 +105,7 @@ export function BowtieDiagramComponent({
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
-  const [barrierOffsets, setBarrierOffsets] = useState<Record<string, { x: number; y: number }>>({});
+  const [barrierOffsets, setBarrierOffsets] = useState<Record<string, { y: number }>>({});
   const inlineBarrierLayoutRef = useRef<Record<string, { x: number; y: number }>>({});
 
   const threatMap = useMemo(() => buildThreatMap(diagram.threats), [diagram]);
@@ -212,7 +213,7 @@ export function BowtieDiagramComponent({
         return;
       }
 
-      const barrierDeltas: Record<string, { x: number; y: number }> = {};
+      const deltaEntries: Array<[string, number]> = [];
 
       updatedRawNodes.forEach((node) => {
         const change = changes.find(
@@ -223,26 +224,20 @@ export function BowtieDiagramComponent({
         }
         const previous = inlineBarrierLayoutRef.current[node.id];
         if (!previous) return;
-        const currentPosition = node.position ?? { x: 0, y: 0 };
-        barrierDeltas[node.id] = {
-          x: currentPosition.x - previous.x,
-          y: currentPosition.y - previous.y,
-        };
+        const currentY = node.position?.y ?? 0;
+        deltaEntries.push([node.id, currentY - previous.y]);
       });
 
-      const deltaEntries = Object.entries(barrierDeltas);
       if (!deltaEntries.length) {
         return;
       }
 
       setBarrierOffsets((prev) => {
         const next = { ...prev };
-        deltaEntries.forEach(([id, delta]) => {
-          const current = next[id] ?? { x: 0, y: 0 };
-          next[id] = {
-            x: current.x + delta.x,
-            y: current.y + delta.y,
-          };
+        deltaEntries.forEach(([id, deltaY]) => {
+          const current = next[id]?.y ?? 0;
+          const updated = clamp(current + deltaY, -FOCUS_VERTICAL_RANGE, FOCUS_VERTICAL_RANGE);
+          next[id] = { y: updated };
         });
         return next;
       });
@@ -989,7 +984,7 @@ function buildConsequenceMap(consequences: Consequence[]): ConsequenceMap {
 function applyFocusLayout(
   nodes: Node[],
   focusedNodeId: string | null,
-  barrierOffsets: Record<string, { x: number; y: number }> = {},
+  barrierOffsets: Record<string, { y: number }> = {},
 ): { nodes: Node[]; inlinePositions: Record<string, { x: number; y: number }> } {
   if (!focusedNodeId) {
     return { nodes, inlinePositions: {} };
@@ -1022,7 +1017,7 @@ function applyFocusLayout(
   const baselineY = (startNode.position?.y ?? 0) + startHeight / 2;
 
   const sortedBarriers = [...barrierNodes].sort(
-    (a, b) => (a.position?.y ?? 0) - (b.position?.y ?? 0),
+    (a, b) => (a.position?.x ?? 0) - (b.position?.x ?? 0),
   );
 
   let previousEndX = (startNode.position?.x ?? 0) + startWidth;
@@ -1033,13 +1028,16 @@ function applyFocusLayout(
     const width = target.width ?? DEFAULT_BARRIER_NODE_WIDTH;
     const height = target.height ?? DEFAULT_BARRIER_NODE_HEIGHT;
     const baseX = previousEndX + FOCUS_BARRIER_GAP;
-    const offset = barrierOffsets[barrierNode.id] ?? { x: 0, y: 0 };
-    let desiredX = baseX + offset.x;
-    if (desiredX < baseX) {
-      desiredX = baseX;
-    }
-    target.position.x = desiredX;
-    target.position.y = baselineY - height / 2 + offset.y;
+    const offsetY = clamp(barrierOffsets[barrierNode.id]?.y ?? 0, -FOCUS_VERTICAL_RANGE, FOCUS_VERTICAL_RANGE);
+
+    target.position.x = baseX;
+    let proposedTop = baselineY - height / 2 + offsetY;
+
+    const minTop = baselineY - height / 2 - FOCUS_VERTICAL_RANGE;
+    const maxTop = baselineY - height / 2 + FOCUS_VERTICAL_RANGE;
+    proposedTop = clamp(proposedTop, minTop, maxTop);
+
+    target.position.y = proposedTop;
     inlinePositions[target.id] = { x: target.position.x, y: target.position.y };
     previousEndX = target.position.x + width;
   });
@@ -1159,6 +1157,16 @@ function severityPillStyle(severity: Severity): CSSProperties {
     color: colors[severity].color,
     marginLeft: '0.35rem',
   };
+}
+
+function clamp(value: number, min: number, max: number) {
+  if (value < min) {
+    return min;
+  }
+  if (value > max) {
+    return max;
+  }
+  return value;
 }
 
 const fallbackStyles: Record<string, CSSProperties> = {
