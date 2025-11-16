@@ -28,6 +28,7 @@ const BARRIER_VERTICAL_GAP = 32;
 const PRIMARY_NODE_DEFAULT_GAP = 72;
 const PRIMARY_NODE_MIN_GAP = 48;
 const THREAT_COLUMN_MAX_SPAN = 300;
+const THREAT_COLUMN_EDGE_BOUND = 170;
 
 /**
  * Converts bowtie diagram to ELK graph structure
@@ -322,6 +323,22 @@ function compactPrimaryNodes(nodes: LayoutNode[]): LayoutNode[] {
           node.y += overshoot * direction * strength;
         });
       }
+    }
+
+    const centers = ordered.map((node) => {
+      const height = node.height ?? DEFAULT_PARENT_NODE_HEIGHT;
+      const center = (node.y ?? 0) + height / 2;
+      return { node, height, center };
+    });
+    const maxDistance = centers.reduce((max, { center }) => {
+      return Math.max(max, Math.abs(center - anchor));
+    }, 0);
+    if (maxDistance > THREAT_COLUMN_EDGE_BOUND) {
+      const scale = THREAT_COLUMN_EDGE_BOUND / maxDistance;
+      centers.forEach(({ node, height, center }) => {
+        const offset = (center - anchor) * scale;
+        node.y = anchor + offset - height / 2;
+      });
     }
 
     let lastBottom = Number.NEGATIVE_INFINITY;

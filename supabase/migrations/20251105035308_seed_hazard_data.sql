@@ -135,18 +135,18 @@ BEGIN
   -- Insert prevention barriers for Distractive Driving
   INSERT INTO prevention_barriers (bowtie_id, name, description, barrier_type_id, responsibility_role, effectiveness_level, barrier_order)
   VALUES 
-    (v_bowtie_id, 'Voice-activated Dispatch System reduces manual input and screen driving', 'Active hardware prevention', v_barrier_type_active_hardware, 'Engineering Manager', 'high', 1),
-    (v_bowtie_id, 'Driver detects alerts triggered from lane departure warning prevents lane drift', 'Active hardware + Human', v_barrier_type_active_hardware, 'Supervisor', 'high', 2);
+    (v_bowtie_id, 'Voice-activated Dispatch System reduces manual input and screen activation while driving', 'Hands-free dispatch interface keeps drivers focused on the road.', v_barrier_type_active_hardware, 'Engineering Manager', 'high', 1),
+    (v_bowtie_id, 'Driver detects alerts triggered from the lane departure warning system and prevents lane drift', 'Driver immediately corrects course when lane-departure cues fire.', v_barrier_type_active_hardware, 'Supervisor', 'high', 2);
 
   INSERT INTO barrier_connections (bowtie_id, barrier_id, threat_id, chain_position, sequence_order)
   SELECT v_bowtie_id, id, v_threat_distraction_id, 1, 1
   FROM prevention_barriers 
-  WHERE bowtie_id = v_bowtie_id AND name = 'Voice-activated Dispatch System reduces manual input and screen driving';
+  WHERE bowtie_id = v_bowtie_id AND name = 'Voice-activated Dispatch System reduces manual input and screen activation while driving';
 
   INSERT INTO barrier_connections (bowtie_id, barrier_id, threat_id, chain_position, sequence_order)
   SELECT v_bowtie_id, id, v_threat_distraction_id, 1, 2
   FROM prevention_barriers 
-  WHERE bowtie_id = v_bowtie_id AND name = 'Driver detects alerts triggered from lane departure warning prevents lane drift';
+  WHERE bowtie_id = v_bowtie_id AND name = 'Driver detects alerts triggered from the lane departure warning system and prevents lane drift';
 
   -- Insert prevention barriers for Slippery Road
   INSERT INTO prevention_barriers (bowtie_id, name, description, barrier_type_id, responsibility_role, effectiveness_level, barrier_order)
@@ -169,21 +169,5 @@ BEGIN
   SELECT v_bowtie_id, id, v_threat_slippery_id, 1, 3
   FROM prevention_barriers 
   WHERE bowtie_id = v_bowtie_id AND name = 'Anti-lock Braking System (ABS) maintains steering control';
-
-  -- Insert prevention barriers for Poor Visibility
-  INSERT INTO prevention_barriers (bowtie_id, name, description, barrier_type_id, responsibility_role, effectiveness_level, barrier_order)
-  VALUES 
-    (v_bowtie_id, 'Voice-activated Dispatch System reduces manual input and screen activation while driving', 'Hands-free dispatch interface keeps the driver focused when sight distance is limited.', v_barrier_type_active_hardware, 'Engineering Manager', 'high', 1),
-    (v_bowtie_id, 'Driver detects alerts triggered from the lane departure warning system and prevents lane drift', 'Driver follows lane-departure alerts to correct course through fog or heavy rain.', v_barrier_type_active_hardware, 'Supervisor', 'high', 2);
-
-  INSERT INTO barrier_connections (bowtie_id, barrier_id, threat_id, chain_position, sequence_order)
-  SELECT v_bowtie_id, id, v_threat_visibility_id, 1, 1
-  FROM prevention_barriers 
-  WHERE bowtie_id = v_bowtie_id AND name = 'Voice-activated Dispatch System reduces manual input and screen activation while driving';
-
-  INSERT INTO barrier_connections (bowtie_id, barrier_id, threat_id, chain_position, sequence_order)
-  SELECT v_bowtie_id, id, v_threat_visibility_id, 1, 2
-  FROM prevention_barriers 
-  WHERE bowtie_id = v_bowtie_id AND name = 'Driver detects alerts triggered from the lane departure warning system and prevents lane drift';
 
 END $$;
