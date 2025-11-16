@@ -52,4 +52,14 @@ export const mitigativeBarriers: Barrier[] = [
     mechanism: 'hybrid',
     owner: 'Emergency Coordinator',
   },
+  {
+    id: 'barrier-rollover-protection',
+    label: 'Rollover protection (reinforced structure)',
+    description: 'Reinforced cabs and side structures keep the vehicle occupant space intact during roll-over events.',
+    type: 'mitigative',
+    effectiveness: 'high',
+    consequenceId: 'consequence-rollover',
+    mechanism: 'passiveHardware',
+    owner: 'Engineering Manager',
+  },
 ];
