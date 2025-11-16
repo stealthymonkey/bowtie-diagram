@@ -62,6 +62,11 @@ const HAZARD_NODE_WIDTH = 240;
 const HAZARD_NODE_HEIGHT = 150;
 const HAZARD_VERTICAL_GAP = 40;
 const TOP_EVENT_NODE_SIZE = 200;
+const DEFAULT_PARENT_NODE_WIDTH = 180;
+const DEFAULT_PARENT_NODE_HEIGHT = 80;
+const DEFAULT_BARRIER_NODE_WIDTH = 160;
+const DEFAULT_BARRIER_NODE_HEIGHT = 60;
+const FOCUS_BARRIER_GAP = 36;
 
 const severityLevelMap: Record<Severity, number> = {
   low: 1,
@@ -171,8 +176,9 @@ export function BowtieDiagramComponent({
       return;
     }
     const scoped = filterGraphForFocus(rawNodes, baseEdges, focusedNodeId);
+    const laidOutNodes = applyFocusLayout(scoped.nodes, focusedNodeId);
     setEdges(scoped.edges);
-    setNodes(applyPresentation(scoped.nodes, filters));
+    setNodes(applyPresentation(laidOutNodes, filters));
   }, [rawNodes, baseEdges, filters, focusedNodeId]);
 
   const handleZoom = (direction: 'in' | 'out' | 'reset') => {
@@ -680,6 +686,13 @@ function buildEdges(
       target: endId,
       type: 'bowtie',
     });
+    addEdge({
+      id: fallbackEdgeId,
+      source: startId,
+      target: endId,
+      type: 'bowtie',
+      data: { fallback: true },
+    });
   };
 
   layoutNodes.forEach((node) => {
@@ -922,6 +935,68 @@ function buildConsequenceMap(consequences: Consequence[]): ConsequenceMap {
   return map;
 }
 
+function applyFocusLayout(nodes: Node[], focusedNodeId: string | null): Node[] {
+  if (!focusedNodeId) return nodes;
+  const barrierNodes = nodes.filter((node) => node.type === 'barrier');
+  if (!barrierNodes.length) return nodes;
+
+  const focusNode = nodes.find((node) => node.id === focusedNodeId);
+  const topEventNode = nodes.find((node) => node.type === 'topEvent');
+  if (!focusNode || !topEventNode) return nodes;
+
+  const isThreatFocus = focusedNodeId.startsWith('threat-');
+  const startNode = isThreatFocus ? focusNode : topEventNode;
+  const endNode = isThreatFocus ? topEventNode : focusNode;
+  const hazardNode = nodes.find((node) => node.type === 'hazard');
+
+  const updatedNodes = nodes.map((node) => ({
+    ...node,
+    position: { ...(node.position ?? { x: 0, y: 0 }) },
+  }));
+  const nodeMap = new Map(updatedNodes.map((node) => [node.id, node]));
+
+  const startWidth = startNode.width ?? DEFAULT_PARENT_NODE_WIDTH;
+  const startHeight = startNode.height ?? DEFAULT_PARENT_NODE_HEIGHT;
+  const baselineY = (startNode.position?.y ?? 0) + startHeight / 2;
+
+  const sortedBarriers = [...barrierNodes].sort(
+    (a, b) => (a.position?.y ?? 0) - (b.position?.y ?? 0),
+  );
+
+  let cursorX =
+    (startNode.position?.x ?? 0) + startWidth + FOCUS_BARRIER_GAP;
+
+  sortedBarriers.forEach((barrierNode) => {
+    const target = nodeMap.get(barrierNode.id);
+    if (!target) return;
+    const width = target.width ?? DEFAULT_BARRIER_NODE_WIDTH;
+    const height = target.height ?? DEFAULT_BARRIER_NODE_HEIGHT;
+    target.position.x = cursorX;
+    target.position.y = baselineY - height / 2;
+    cursorX += width + FOCUS_BARRIER_GAP;
+  });
+
+  const endRef = nodeMap.get(endNode.id);
+  if (endRef) {
+    const endHeight = endRef.height ?? DEFAULT_PARENT_NODE_HEIGHT;
+    endRef.position.y = baselineY - endHeight / 2;
+    const currentEndX = endRef.position.x ?? 0;
+    const requiredEndX = cursorX + FOCUS_BARRIER_GAP;
+    if (requiredEndX > currentEndX) {
+      const deltaX = requiredEndX - currentEndX;
+      endRef.position.x = requiredEndX;
+      if (isThreatFocus && hazardNode) {
+        const hazardRef = nodeMap.get(hazardNode.id);
+        if (hazardRef) {
+          hazardRef.position.x = (hazardRef.position.x ?? 0) + deltaX;
+        }
+      }
+    }
+  }
+
+  return updatedNodes;
+}
+
 function filterGraphForFocus(
   nodes: Node[],
   edges: Edge[],
@@ -964,9 +1039,15 @@ function filterGraphForFocus(
 
   const filteredNodes = nodes.filter((node) => allowedIds.has(node.id));
   const allowedEdgeNodes = new Set(filteredNodes.map((node) => node.id));
-  const filteredEdges = edges.filter(
-    (edge) => allowedEdgeNodes.has(edge.source) && allowedEdgeNodes.has(edge.target)
-  );
+  const filteredEdges = edges.filter((edge) => {
+    if (!allowedEdgeNodes.has(edge.source) || !allowedEdgeNodes.has(edge.target)) {
+      return false;
+    }
+    if (focusedNodeId && (edge.data as any)?.fallback) {
+      return false;
+    }
+    return true;
+  });
 
   return { nodes: filteredNodes, edges: filteredEdges };
 }
