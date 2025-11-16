@@ -646,6 +646,7 @@ function buildEdges(
   };
 
   layoutNodes.forEach((layoutNode) => {
+  layoutNodes.forEach((layoutNode) => {
     if (layoutNode.type === 'threat') {
       addEdge({
         id: `edge-${layoutNode.id}-topEvent`,
@@ -677,21 +678,9 @@ function buildEdges(
           target: layoutNode.id,
           type: 'bowtie',
         });
-        addEdge({
-          id: `edge-barrier-${barrier.id}-topEvent`,
-          source: layoutNode.id,
-          target: topEventNodeId,
-          type: 'bowtie',
-        });
       }
 
       if (barrier.type === 'mitigative' && barrier.consequenceId) {
-        addEdge({
-          id: `edge-topEvent-barrier-${barrier.id}`,
-          source: topEventNodeId,
-          target: layoutNode.id,
-          type: 'bowtie',
-        });
         addEdge({
           id: `edge-barrier-${barrier.id}-consequence-${barrier.consequenceId}`,
           source: layoutNode.id,
