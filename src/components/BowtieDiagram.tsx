@@ -618,7 +618,7 @@ function applyPresentation(nodes: Node[], filters: FilterState): Node[] {
 function buildEdges(
   layoutNodes: LayoutNode[],
   diagram: BowtieDiagram,
-  barrierMap: Map<string, Barrier>,
+  barrierMap: Map<string, Barrier>
 ) {
   const nodeIds = new Set(layoutNodes.map((node) => node.id));
   const edges: Edge[] = [];
@@ -715,7 +715,7 @@ function buildEdges(
 function createHazardReactFlowNode(
   hazard: Hazard,
   topEventId: string,
-  nodes: Node[],
+  nodes: Node[]
 ) {
   const topEventNode = nodes.find((node) => node.id === `topEvent-${topEventId}`);
   if (!topEventNode) {
@@ -763,7 +763,7 @@ function getNodeDetails(
   diagram: BowtieDiagram,
   threatMap: ThreatMap,
   consequenceMap: ConsequenceMap,
-  barrierMap: Map<string, Barrier>,
+  barrierMap: Map<string, Barrier>
 ) {
   if (!nodeId) return null;
 
@@ -883,7 +883,7 @@ function buildConsequenceMap(consequences: Consequence[]): ConsequenceMap {
 function filterGraphForFocus(
   nodes: Node[],
   edges: Edge[],
-  focusedNodeId: string | null,
+  focusedNodeId: string | null
 ) {
   if (!nodes.length) {
     return { nodes: [], edges: [] };
