@@ -468,7 +468,7 @@ function createReactFlowGraph(
   diagram: BowtieDiagram,
   threatMap: ThreatMap,
   consequenceMap: ConsequenceMap,
-  barrierMap: Map<string, Barrier>,
+  barrierMap: Map<string, Barrier>
 ) {
   const nodes = layoutNodes.map((layoutNode) => {
     const base: Node = {
@@ -893,7 +893,7 @@ function filterGraphForFocus(
     const filteredNodes = nodes.filter((node) => node.type !== 'barrier');
     const allowedIds = new Set(filteredNodes.map((node) => node.id));
     const filteredEdges = edges.filter(
-      (edge) => allowedIds.has(edge.source) && allowedIds.has(edge.target),
+      (edge) => allowedIds.has(edge.source) && allowedIds.has(edge.target)
     );
     return { nodes: filteredNodes, edges: filteredEdges };
   }
@@ -923,7 +923,7 @@ function filterGraphForFocus(
   const filteredNodes = nodes.filter((node) => allowedIds.has(node.id));
   const allowedEdgeNodes = new Set(filteredNodes.map((node) => node.id));
   const filteredEdges = edges.filter(
-    (edge) => allowedEdgeNodes.has(edge.source) && allowedEdgeNodes.has(edge.target),
+    (edge) => allowedEdgeNodes.has(edge.source) && allowedEdgeNodes.has(edge.target)
   );
 
   return { nodes: filteredNodes, edges: filteredEdges };
