@@ -29,6 +29,35 @@ export const ThreatNode = memo(({ data }: NodeProps) => {
   const dimmed = data.dimmed;
   const selected = data.selected;
   const highlighted = data.highlighted;
+  const typeChipStyle: CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    borderRadius: '999px',
+    border: `1.5px solid ${borderColor}`,
+    padding: '0.2rem 0.7rem',
+    fontSize: '0.78rem',
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+    fontWeight: 700,
+    background: 'rgba(255, 255, 255, 0.85)',
+    color: '#0f172a',
+  };
+  const levelChipStyle: CSSProperties = {
+    ...typeChipStyle,
+    textTransform: 'none',
+    letterSpacing: '0.02em',
+    background: 'rgba(59, 130, 246, 0.15)',
+    color: '#1e3a8a',
+  };
+  const addChipStyle: CSSProperties = {
+    ...typeChipStyle,
+    borderStyle: 'dashed',
+    background: 'transparent',
+    color: borderColor,
+    letterSpacing: 0,
+    textTransform: 'none',
+    paddingInline: '0.55rem',
+  };
 
   return (
     <div
@@ -52,35 +81,18 @@ export const ThreatNode = memo(({ data }: NodeProps) => {
       <div
         style={{
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '0.35rem',
-          fontSize: '0.75rem',
-          letterSpacing: '0.05em',
-          textTransform: 'uppercase',
-          color: '#475569',
+          flexWrap: 'wrap',
+          gap: '0.4rem',
+          marginBottom: '0.65rem',
         }}
       >
-        <span>Threat</span>
-        {data.hasChildren ? (
-          <span
-            style={{
-              borderRadius: '999px',
-              border: `1px solid ${borderColor}`,
-              padding: '0 6px',
-              fontWeight: 700,
-            }}
-          >
-            +
-          </span>
+        <span style={typeChipStyle}>Threat</span>
+        {data.level !== undefined ? (
+          <span style={levelChipStyle}>Level {data.level}</span>
         ) : null}
+        {data.hasChildren ? <span style={addChipStyle}>+</span> : null}
       </div>
-      <div style={{ fontSize: '1rem', lineHeight: 1.3 }}>{data.label}</div>
-      {data.level !== undefined && (
-        <div style={{ marginTop: '0.4rem', fontSize: '0.75rem', color: '#334155' }}>
-          Level {data.level}
-        </div>
-      )}
+      <div style={{ fontSize: '1.1rem', lineHeight: 1.4 }}>{data.label}</div>
     </div>
   );
 });
