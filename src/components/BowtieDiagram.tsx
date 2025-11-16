@@ -89,6 +89,7 @@ export function BowtieDiagramComponent({
   diagram,
 }: BowtieDiagramProps) {
   const [rawNodes, setRawNodes] = useState<Node[]>([]);
+  const [baseEdges, setBaseEdges] = useState<Edge[]>([]);
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,6 +97,7 @@ export function BowtieDiagramComponent({
   const [filterText, setFilterText] = useState('');
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('all');
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
 
   const threatMap = useMemo(() => buildThreatMap(diagram.threats), [diagram]);
@@ -146,7 +148,7 @@ export function BowtieDiagramComponent({
           barrierMap,
         );
         setRawNodes(rfNodes);
-        setEdges(rfEdges);
+        setBaseEdges(rfEdges);
         setLoading(false);
       })
       .catch((err) => {
@@ -163,9 +165,15 @@ export function BowtieDiagramComponent({
   }, [diagram, threatMap, consequenceMap, barrierMap]);
 
   useEffect(() => {
-    if (!rawNodes.length) return;
-    setNodes(applyPresentation(rawNodes, filters));
-  }, [rawNodes, filters]);
+    if (!rawNodes.length) {
+      setNodes([]);
+      setEdges([]);
+      return;
+    }
+    const scoped = filterGraphForFocus(rawNodes, baseEdges, focusedNodeId);
+    setEdges(scoped.edges);
+    setNodes(applyPresentation(scoped.nodes, filters));
+  }, [rawNodes, baseEdges, filters, focusedNodeId]);
 
   const handleZoom = (direction: 'in' | 'out' | 'reset') => {
     if (!reactFlowInstance) return;
@@ -185,6 +193,16 @@ export function BowtieDiagramComponent({
     [],
   );
 
+  const handleNodeDoubleClick = useCallback(
+    (_: any, node: Node) => {
+      if (node.type === 'threat' || node.type === 'consequence') {
+        setFocusedNodeId(node.id);
+        setSelectedNodeId(node.id);
+      }
+    },
+    [],
+  );
+
   if (error) {
     return (
       <div style={fallbackStyles.container}>
@@ -200,6 +218,12 @@ export function BowtieDiagramComponent({
       </div>
     );
   }
+
+  const focusLabel = useMemo(() => {
+    if (!focusedNodeId) return null;
+    const node = rawNodes.find((n) => n.id === focusedNodeId);
+    return node?.data?.label ?? null;
+  }, [focusedNodeId, rawNodes]);
 
   const selectedDetails = getNodeDetails(
     selectedNodeId,
@@ -227,6 +251,39 @@ export function BowtieDiagramComponent({
             }}
           />
         </div>
+
+        <div className="bowtie-toolbar__group">
+          <label htmlFor="severity-filter">Severity focus</label>
+          <select
+            id="severity-filter"
+            className="bowtie-select"
+            value={severityFilter}
+            onChange={(event) => {
+              setSeverityFilter(event.target.value as SeverityFilter);
+            }}
+          >
+            <option value="all">All severities</option>
+            <option value="low">Low only</option>
+            <option value="medium">Medium +</option>
+            <option value="high">High +</option>
+            <option value="critical">Critical only</option>
+          </select>
+        </div>
+
+        {focusedNodeId ? (
+          <div className="bowtie-toolbar__group bowtie-toolbar__group--row">
+            <span className="bowtie-toolbar__hint">
+              Focused on {focusLabel ?? 'selected node'}
+            </span>
+            <button
+              type="button"
+              className="bowtie-button"
+              onClick={() => setFocusedNodeId(null)}
+            >
+              Exit focus
+            </button>
+          </div>
+        ) : null}
 
         <div className="bowtie-toolbar__group">
           <label htmlFor="severity-filter">Severity focus</label>
@@ -292,7 +349,11 @@ export function BowtieDiagramComponent({
           onNodesChange={handleNodesChange}
           onInit={(instance) => setReactFlowInstance(instance)}
           onNodeClick={(_, node) => setSelectedNodeId(node.id)}
-          onPaneClick={() => setSelectedNodeId(null)}
+          onNodeDoubleClick={handleNodeDoubleClick}
+          onPaneClick={() => {
+            setSelectedNodeId(null);
+            setFocusedNodeId(null);
+          }}
         >
             <Background />
             <Controls showInteractive={false} position="bottom-right" />
@@ -487,6 +548,8 @@ function createReactFlowGraph(
         description: barrier?.description,
         relatedThreatId: barrier?.threatId,
         relatedConsequenceId: barrier?.consequenceId,
+        owner: barrier?.owner,
+        mechanism: barrier?.mechanism,
       };
     }
 
@@ -839,6 +902,47 @@ function buildConsequenceMap(consequences: Consequence[]): ConsequenceMap {
   };
   traverse(consequences);
   return map;
+}
+
+function filterGraphForFocus(
+  nodes: Node[],
+  edges: Edge[],
+  focusedNodeId: string | null,
+) {
+  if (!nodes.length) {
+    return { nodes: [], edges: [] };
+  }
+
+  const allowedIds = new Set<string>();
+  nodes.forEach((node) => {
+    if (node.type !== 'barrier') {
+      allowedIds.add(node.id);
+    }
+  });
+
+  if (focusedNodeId) {
+    const focusIsThreat = focusedNodeId.startsWith('threat-');
+    const focusKey = focusedNodeId.replace(/^(threat|consequence)-/, '');
+    nodes.forEach((node) => {
+      if (node.type !== 'barrier') return;
+      const relatedThreat = node.data?.relatedThreatId;
+      const relatedConsequence = node.data?.relatedConsequenceId;
+      if (focusIsThreat && relatedThreat === focusKey) {
+        allowedIds.add(node.id);
+      }
+      if (!focusIsThreat && relatedConsequence === focusKey) {
+        allowedIds.add(node.id);
+      }
+    });
+  }
+
+  const filteredNodes = nodes.filter((node) => allowedIds.has(node.id));
+  const allowedEdgeNodes = new Set(filteredNodes.map((node) => node.id));
+  const filteredEdges = edges.filter(
+    (edge) => allowedEdgeNodes.has(edge.source) && allowedEdgeNodes.has(edge.target),
+  );
+
+  return { nodes: filteredNodes, edges: filteredEdges };
 }
 
 function getSourcePosition(type: LayoutNode['type']) {

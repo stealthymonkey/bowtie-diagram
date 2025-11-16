@@ -1,6 +1,8 @@
 import type { BowtieDiagram } from './types';
 import { baselineThreats } from './threatDefinitions';
 import { baselineConsequences } from './consequenceDefinitions';
+import { preventiveBarriers } from './preventiveBarriers';
+import { mitigativeBarriers } from './mitigativeBarriers';
 
 export const hazardTopEventDiagram: BowtieDiagram = {
   id: 'hazard-top-event',
@@ -18,5 +20,5 @@ export const hazardTopEventDiagram: BowtieDiagram = {
   },
   threats: baselineThreats,
   consequences: baselineConsequences,
-  barriers: [],
+  barriers: [...preventiveBarriers, ...mitigativeBarriers],
 };

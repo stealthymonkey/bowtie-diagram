@@ -27,6 +27,9 @@ export interface Barrier {
   effectiveness?: 'low' | 'medium' | 'high';
   threatId?: string; // Links to threat (preventive)
   consequenceId?: string; // Links to consequence (mitigative)
+  mechanism: 'activeHuman' | 'activeHardware' | 'passiveHardware' | 'hybrid';
+  owner: string;
+  appearance?: NodeAppearance;
 }
 
 export interface TopEvent {

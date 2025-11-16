@@ -14,6 +14,13 @@ const palette = {
   },
 };
 
+const mechanismStyles: Record<string, { label: string; color: string }> = {
+  activeHuman: { label: 'Active human', color: '#dc2626' },
+  activeHardware: { label: 'Active hardware', color: '#0ea5e9' },
+  passiveHardware: { label: 'Passive hardware', color: '#10b981' },
+  hybrid: { label: 'Active human + hardware', color: '#a16207' },
+};
+
 const invisibleHandleStyle: CSSProperties = {
   width: 12,
   height: 12,
@@ -30,6 +37,7 @@ export const BarrierNode = memo(({ data }: NodeProps) => {
   const dimmed = data.dimmed;
   const selected = data.selected;
   const highlighted = data.highlighted;
+  const mechanism = data.mechanism ? mechanismStyles[data.mechanism] : null;
 
   return (
     <div
@@ -68,6 +76,16 @@ export const BarrierNode = memo(({ data }: NodeProps) => {
           }}
         >
           Effectiveness: {data.effectiveness}
+        </div>
+      )}
+      {mechanism && (
+        <div style={{ marginTop: '0.35rem', fontSize: '0.75rem', color: mechanism.color }}>
+          {mechanism.label}
+        </div>
+      )}
+      {data.owner && (
+        <div style={{ marginTop: '0.25rem', fontSize: '0.78rem', fontWeight: 600, color: '#0f172a' }}>
+          Owner: {data.owner}
         </div>
       )}
     </div>

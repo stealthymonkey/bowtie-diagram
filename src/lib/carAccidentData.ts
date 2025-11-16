@@ -261,6 +261,8 @@ export const carAccidentBowtie: BowtieDiagram = {
       type: 'preventive',
       effectiveness: 'high',
       threatId: 'threat-1',
+      mechanism: 'activeHuman',
+      owner: 'Training Lead',
     },
     {
       id: 'barrier-2',
@@ -268,6 +270,8 @@ export const carAccidentBowtie: BowtieDiagram = {
       type: 'preventive',
       effectiveness: 'high',
       threatId: 'threat-1',
+      mechanism: 'activeHuman',
+      owner: 'Compliance Officer',
     },
     {
       id: 'barrier-3',
@@ -275,6 +279,8 @@ export const carAccidentBowtie: BowtieDiagram = {
       type: 'preventive',
       effectiveness: 'high',
       threatId: 'threat-2',
+      mechanism: 'activeHardware',
+      owner: 'Maintenance Manager',
     },
     {
       id: 'barrier-4',
@@ -282,6 +288,8 @@ export const carAccidentBowtie: BowtieDiagram = {
       type: 'preventive',
       effectiveness: 'medium',
       threatId: 'threat-2',
+      mechanism: 'activeHuman',
+      owner: 'Inspection Lead',
     },
     {
       id: 'barrier-5',
@@ -289,6 +297,8 @@ export const carAccidentBowtie: BowtieDiagram = {
       type: 'preventive',
       effectiveness: 'medium',
       threatId: 'threat-3',
+      mechanism: 'activeHuman',
+      owner: 'Dispatch Supervisor',
     },
     {
       id: 'barrier-6',
@@ -296,6 +306,8 @@ export const carAccidentBowtie: BowtieDiagram = {
       type: 'preventive',
       effectiveness: 'medium',
       threatId: 'threat-3',
+      mechanism: 'passiveHardware',
+      owner: 'Infrastructure Manager',
     },
     {
       id: 'barrier-7',
@@ -303,6 +315,8 @@ export const carAccidentBowtie: BowtieDiagram = {
       type: 'preventive',
       effectiveness: 'medium',
       threatId: 'threat-4',
+      mechanism: 'passiveHardware',
+      owner: 'City Traffic Engineer',
     },
     // Mitigative barriers (right side)
     {
@@ -311,6 +325,8 @@ export const carAccidentBowtie: BowtieDiagram = {
       type: 'mitigative',
       effectiveness: 'high',
       consequenceId: 'consequence-2',
+      mechanism: 'activeHardware',
+      owner: 'Fleet Safety Manager',
     },
     {
       id: 'barrier-9',
@@ -318,6 +334,8 @@ export const carAccidentBowtie: BowtieDiagram = {
       type: 'mitigative',
       effectiveness: 'high',
       consequenceId: 'consequence-2',
+      mechanism: 'activeHardware',
+      owner: 'Vehicle Engineering',
     },
     {
       id: 'barrier-10',
@@ -325,6 +343,8 @@ export const carAccidentBowtie: BowtieDiagram = {
       type: 'mitigative',
       effectiveness: 'high',
       consequenceId: 'consequence-2',
+      mechanism: 'hybrid',
+      owner: 'Emergency Coordinator',
     },
     {
       id: 'barrier-11',
@@ -332,6 +352,8 @@ export const carAccidentBowtie: BowtieDiagram = {
       type: 'mitigative',
       effectiveness: 'medium',
       consequenceId: 'consequence-1',
+      mechanism: 'activeHuman',
+      owner: 'Risk Manager',
     },
     {
       id: 'barrier-12',
@@ -339,6 +361,8 @@ export const carAccidentBowtie: BowtieDiagram = {
       type: 'mitigative',
       effectiveness: 'medium',
       consequenceId: 'consequence-3',
+      mechanism: 'activeHuman',
+      owner: 'Traffic Control Lead',
     },
   ],
 };
