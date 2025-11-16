@@ -26,6 +26,7 @@ const DEFAULT_BARRIER_NODE_HEIGHT = 120;
 const BARRIER_HORIZONTAL_GAP = 80;
 const BARRIER_VERTICAL_GAP = 32;
 const PRIMARY_NODE_VERTICAL_GAP = 48;
+const THREAT_COLUMN_MAX_SPAN = 360;
 
 /**
  * Converts bowtie diagram to ELK graph structure
@@ -270,7 +271,10 @@ function compactPrimaryNodes(nodes: LayoutNode[]): LayoutNode[] {
   const topEventHeight = topEvent?.height ?? DEFAULT_PARENT_NODE_HEIGHT;
   const topEventCenterY = topEvent ? (topEvent.y ?? 0) + topEventHeight / 2 : null;
 
-  const alignColumn = (type: LayoutNode['type']) => {
+  const alignColumn = (
+    type: LayoutNode['type'],
+    options?: { maxSpan?: number },
+  ) => {
     const column = nodes.filter(
       (node) => node.type === type && !node.parentId,
     );
@@ -278,13 +282,17 @@ function compactPrimaryNodes(nodes: LayoutNode[]): LayoutNode[] {
       return;
     }
 
-    const gap = PRIMARY_NODE_VERTICAL_GAP;
-    const totalHeight =
-      column.reduce(
-        (sum, node) => sum + (node.height ?? DEFAULT_PARENT_NODE_HEIGHT),
-        0,
-      ) +
-      gap * (column.length - 1);
+    const sumHeights = column.reduce(
+      (sum, node) => sum + (node.height ?? DEFAULT_PARENT_NODE_HEIGHT),
+      0,
+    );
+    let gap = PRIMARY_NODE_VERTICAL_GAP;
+    if (options?.maxSpan) {
+      const maxSpan = Math.max(options.maxSpan, sumHeights);
+      const availableGapSpace = maxSpan - sumHeights;
+      gap = column.length > 1 ? availableGapSpace / (column.length - 1) : 0;
+    }
+    const totalHeight = sumHeights + gap * (column.length - 1);
     const anchor =
       topEventCenterY ??
       column.reduce((sum, node) => sum + (node.y ?? 0), 0) / column.length;
@@ -298,8 +306,7 @@ function compactPrimaryNodes(nodes: LayoutNode[]): LayoutNode[] {
       });
   };
 
-  alignColumn('threat');
-  alignColumn('consequence');
+  alignColumn('threat', { maxSpan: THREAT_COLUMN_MAX_SPAN });
   return nodes;
 }
 
