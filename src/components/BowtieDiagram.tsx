@@ -28,6 +28,7 @@ import { TopEventNode } from './TopEventNode';
 import { HazardNode } from './HazardNode';
 import { BowtieEdge } from './BowtieEdge';
 import { DEFAULT_CONNECTION } from '../lib/connectionStyles';
+import { describeBarrierMechanism, describeBarrierType } from '../lib/barrierMeta';
 
 type Severity = 'low' | 'medium' | 'high' | 'critical';
 interface BowtieDiagramProps {
@@ -531,6 +532,31 @@ export function BowtieDiagramComponent({
                 )}
               </div>
 
+              {selectedDetails.barriers?.length ? (
+                <div className="bowtie-inspector__section">
+                  <h4>Mitigative barriers</h4>
+                  <div className="bowtie-inspector__list">
+                    {selectedDetails.barriers.map((barrier: Barrier) => {
+                      const mechanism = describeBarrierMechanism(barrier.mechanism);
+                      const typeLabel = describeBarrierType(barrier.type);
+                      return (
+                        <div key={barrier.id} className="bowtie-barrier-chip">
+                          <p className="bowtie-barrier-chip__title">{barrier.label}</p>
+                          <div className="bowtie-barrier-chip__meta">
+                            <span>{typeLabel}</span>
+                            {mechanism ? <span>{mechanism.label}</span> : null}
+                            {barrier.effectiveness ? (
+                              <span>Effectiveness: {barrier.effectiveness}</span>
+                            ) : null}
+                            {barrier.owner ? <span>Owner: {barrier.owner}</span> : null}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+
               {selectedDetails.tags?.length ? (
                 <div className="bowtie-inspector__section">
                   <h4>Context</h4>
@@ -613,18 +639,23 @@ function createReactFlowGraph(
     if (layoutNode.type === 'consequence') {
       const consequenceId = layoutNode.id.replace('consequence-', '');
       const consequence = consequenceMap[consequenceId];
+      const mitigativeBarriers = diagram.barriers.filter(
+        (barrier) =>
+          barrier.type === 'mitigative' && barrier.consequenceId === consequenceId,
+      );
       base.data = {
-      ...base.data,
-      label: consequence?.label ?? layoutNode.label,
-      severity: consequence?.severity,
-      level: deriveSeverityLevel(
-        consequence?.severity as Severity | undefined,
-        consequence?.level ?? layoutNode.level,
-      ),
-      description: consequence?.description,
-      hasChildren: Boolean(consequence?.subConsequences?.length),
-      appearance: consequence?.appearance,
-    };
+        ...base.data,
+        label: consequence?.label ?? layoutNode.label,
+        severity: consequence?.severity,
+        level: deriveSeverityLevel(
+          consequence?.severity as Severity | undefined,
+          consequence?.level ?? layoutNode.level,
+        ),
+        description: consequence?.description,
+        hasChildren: Boolean(consequence?.subConsequences?.length),
+        appearance: consequence?.appearance,
+        barriers: mitigativeBarriers,
+      };
     }
 
     if (layoutNode.type === 'barrier') {
@@ -961,6 +992,10 @@ function getNodeDetails(
     const consequenceId = nodeId.replace('consequence-', '');
     const consequence = consequenceMap[consequenceId];
     if (!consequence) return null;
+    const consequenceBarriers = diagram.barriers.filter(
+      (barrier) =>
+        barrier.type === 'mitigative' && barrier.consequenceId === consequenceId,
+    );
     return {
       id: nodeId,
       kind: 'consequence',
@@ -972,6 +1007,7 @@ function getNodeDetails(
         consequence.level,
       ),
       tags: consequence.subConsequences?.map((sub) => sub.label) ?? [],
+      barriers: consequenceBarriers,
     };
   }
 

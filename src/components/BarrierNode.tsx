@@ -1,5 +1,6 @@
 import { memo, type CSSProperties } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { describeBarrierMechanism } from '../lib/barrierMeta';
 
 const palette = {
   preventive: {
@@ -12,13 +13,6 @@ const palette = {
     border: '#6366f1',
     label: 'Mitigative barrier',
   },
-};
-
-const mechanismStyles: Record<string, { label: string; color: string }> = {
-  activeHuman: { label: 'Active human', color: '#dc2626' },
-  activeHardware: { label: 'Active hardware', color: '#0ea5e9' },
-  passiveHardware: { label: 'Passive hardware', color: '#10b981' },
-  hybrid: { label: 'Active human + hardware', color: '#a16207' },
 };
 
 const invisibleHandleStyle: CSSProperties = {
@@ -37,7 +31,7 @@ export const BarrierNode = memo(({ data }: NodeProps) => {
   const dimmed = data.dimmed;
   const selected = data.selected;
   const highlighted = data.highlighted;
-  const mechanism = data.mechanism ? mechanismStyles[data.mechanism] : null;
+  const mechanism = describeBarrierMechanism(data.mechanism);
 
   return (
     <div

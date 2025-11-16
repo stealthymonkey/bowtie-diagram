@@ -1,5 +1,6 @@
 import { memo, type CSSProperties } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { describeBarrierMechanism, describeBarrierType } from '../lib/barrierMeta';
 
 const severityPalette: Record<string, { bg: string; border: string }> = {
   low: { bg: '#fee2e2', border: '#f87171' },
@@ -45,6 +46,61 @@ const invisibleHandleStyle: CSSProperties = {
   pointerEvents: 'none',
 };
 
+const barrierSectionStyle: CSSProperties = {
+  marginTop: '0.85rem',
+  paddingTop: '0.7rem',
+  borderTop: '1px solid rgba(248, 113, 113, 0.35)',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.45rem',
+};
+
+const barrierSectionTitleStyle: CSSProperties = {
+  fontSize: '0.75rem',
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+  color: '#fee2e2',
+  fontWeight: 700,
+};
+
+const barrierListStyle: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.45rem',
+};
+
+const barrierCardStyle: CSSProperties = {
+  background: 'rgba(255, 255, 255, 0.94)',
+  borderRadius: '10px',
+  padding: '0.45rem 0.6rem',
+  boxShadow: '0 4px 12px rgba(15, 23, 42, 0.15)',
+};
+
+const barrierMetaRowStyle: CSSProperties = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '0.35rem',
+  marginTop: '0.35rem',
+};
+
+const barrierChipBaseStyle: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  borderRadius: '999px',
+  padding: '0.12rem 0.45rem',
+  fontSize: '0.68rem',
+  fontWeight: 700,
+  letterSpacing: '0.03em',
+  textTransform: 'uppercase',
+};
+
+const barrierOwnerStyle: CSSProperties = {
+  marginTop: '0.3rem',
+  fontSize: '0.78rem',
+  fontWeight: 600,
+  color: '#0f172a',
+};
+
 export const ConsequenceNode = memo(({ data }: NodeProps) => {
   const severity = data.severity || 'medium';
   const basePalette = severityPalette[severity] ?? severityPalette.medium;
@@ -56,6 +112,8 @@ export const ConsequenceNode = memo(({ data }: NodeProps) => {
   const dimmed = data.dimmed;
   const selected = data.selected;
   const highlighted = data.highlighted;
+  const barriers = Array.isArray(data.barriers) ? data.barriers : [];
+  const hasBarriers = barriers.length > 0;
   const chipBaseStyle: CSSProperties = {
     display: 'inline-flex',
     alignItems: 'center',
@@ -132,6 +190,63 @@ export const ConsequenceNode = memo(({ data }: NodeProps) => {
         {data.hasChildren ? <span style={addChipStyle}>+</span> : null}
       </div>
       <div style={{ fontSize: '1.1rem', lineHeight: 1.4 }}>{data.label}</div>
+      {hasBarriers ? (
+        <div style={barrierSectionStyle}>
+          <span style={barrierSectionTitleStyle}>Mitigative barriers</span>
+          <div style={barrierListStyle}>
+            {barriers.map((barrier) => {
+              const mechanism = describeBarrierMechanism(barrier.mechanism);
+              const typeLabel = describeBarrierType(barrier.type);
+              return (
+                <div key={barrier.id} style={barrierCardStyle}>
+                  <div style={{ fontWeight: 600, color: '#0f172a', lineHeight: 1.35 }}>
+                    {barrier.label}
+                  </div>
+                  <div style={barrierMetaRowStyle}>
+                    <span
+                      style={{
+                        ...barrierChipBaseStyle,
+                        background: 'rgba(248, 113, 113, 0.15)',
+                        color: '#991b1b',
+                      }}
+                    >
+                      {typeLabel}
+                    </span>
+                    {mechanism ? (
+                      <span
+                        style={{
+                          ...barrierChipBaseStyle,
+                          border: `1px solid ${mechanism.color}`,
+                          color: mechanism.color,
+                          background: 'rgba(255, 255, 255, 0.85)',
+                          textTransform: 'none',
+                          letterSpacing: '0.02em',
+                        }}
+                      >
+                        {mechanism.label}
+                      </span>
+                    ) : null}
+                    {barrier.effectiveness ? (
+                      <span
+                        style={{
+                          ...barrierChipBaseStyle,
+                          background: '#fef3c7',
+                          color: '#92400e',
+                        }}
+                      >
+                        Eff: {barrier.effectiveness}
+                      </span>
+                    ) : null}
+                  </div>
+                  {barrier.owner ? (
+                    <div style={barrierOwnerStyle}>Owner: {barrier.owner}</div>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 });
