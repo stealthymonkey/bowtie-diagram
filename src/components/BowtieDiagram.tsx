@@ -188,7 +188,11 @@ export function BowtieDiagramComponent({
     inlineBarrierLayoutRef.current = inlinePositions;
     setEdges(scoped.edges);
     setNodes(applyPresentation(laidOutNodes, filters));
-  }, [rawNodes, baseEdges, filters, focusedNodeId, barrierOffsets]);
+
+    if (reactFlowInstance) {
+      reactFlowInstance.fitView({ padding: 0.15, duration: 300 });
+    }
+  }, [rawNodes, baseEdges, filters, focusedNodeId, barrierOffsets, reactFlowInstance]);
 
   const handleZoom = (direction: 'in' | 'out' | 'reset') => {
     if (!reactFlowInstance) return;
