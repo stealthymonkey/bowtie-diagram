@@ -107,8 +107,10 @@ export function BowtieDiagramComponent({
   const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
   const [barrierOffsets, setBarrierOffsets] = useState<Record<string, { y: number }>>({});
+  const [focusNodeOffsets, setFocusNodeOffsets] = useState<Record<string, { x: number; y: number }>>({});
   const [barrierOrder, setBarrierOrder] = useState<Record<string, number>>({});
   const inlineBarrierLayoutRef = useRef<Record<string, { x: number; y: number }>>({});
+  const focusNodePositionRef = useRef<{ id: string; x: number; y: number } | null>(null);
 
   const threatMap = useMemo(() => buildThreatMap(diagram.threats), [diagram]);
   const consequenceMap = useMemo(
@@ -187,15 +189,28 @@ export function BowtieDiagramComponent({
       focusedNodeId,
       barrierOffsets,
       barrierOrder,
+      focusNodeOffsets,
     );
     inlineBarrierLayoutRef.current = inlinePositions;
+    if (focusedNodeId) {
+      const focusNode = laidOutNodes.find((node) => node.id === focusedNodeId);
+      if (focusNode) {
+        focusNodePositionRef.current = {
+          id: focusedNodeId,
+          x: focusNode.position?.x ?? 0,
+          y: focusNode.position?.y ?? 0,
+        };
+      }
+    } else {
+      focusNodePositionRef.current = null;
+    }
     setEdges(scoped.edges);
     setNodes(applyPresentation(laidOutNodes, filters));
 
     if (reactFlowInstance) {
       reactFlowInstance.fitView({ padding: 0.15, duration: 300 });
     }
-  }, [rawNodes, baseEdges, filters, focusedNodeId, barrierOffsets, barrierOrder, reactFlowInstance]);
+  }, [rawNodes, baseEdges, filters, focusedNodeId, barrierOffsets, barrierOrder, focusNodeOffsets, reactFlowInstance]);
 
   const handleZoom = (direction: 'in' | 'out' | 'reset') => {
     if (!reactFlowInstance) return;
@@ -236,19 +251,39 @@ export function BowtieDiagramComponent({
         deltaEntries.push([node.id, currentY - previous.y]);
       });
 
-      if (!deltaEntries.length) {
-        return;
+      if (deltaEntries.length) {
+        setBarrierOffsets((prev) => {
+          const next = { ...prev };
+          deltaEntries.forEach(([id, deltaY]) => {
+            const current = next[id]?.y ?? 0;
+            const updated = clamp(current + deltaY, -FOCUS_VERTICAL_RANGE, FOCUS_VERTICAL_RANGE);
+            next[id] = { y: updated };
+          });
+          return next;
+        });
       }
 
-      setBarrierOffsets((prev) => {
-        const next = { ...prev };
-        deltaEntries.forEach(([id, deltaY]) => {
-          const current = next[id]?.y ?? 0;
-          const updated = clamp(current + deltaY, -FOCUS_VERTICAL_RANGE, FOCUS_VERTICAL_RANGE);
-          next[id] = { y: updated };
-        });
-        return next;
-      });
+      if (focusedNodeId && focusNodePositionRef.current?.id === focusedNodeId) {
+        const focusNode = updatedRawNodes.find((node) => node.id === focusedNodeId);
+        if (focusNode) {
+          const previous = focusNodePositionRef.current;
+          const currentPos = focusNode.position ?? { x: 0, y: 0 };
+          const deltaX = currentPos.x - previous!.x;
+          const deltaY = currentPos.y - previous!.y;
+          if (deltaX || deltaY) {
+            setFocusNodeOffsets((prev) => {
+              const current = prev[focusedNodeId] ?? { x: 0, y: 0 };
+              return {
+                ...prev,
+                [focusedNodeId]: {
+                  x: current.x + deltaX,
+                  y: current.y + deltaY,
+                },
+              };
+            });
+          }
+        }
+      }
     },
     [focusedNodeId],
   );
@@ -1024,6 +1059,7 @@ function applyFocusLayout(
   focusedNodeId: string | null,
   barrierOffsets: Record<string, { y: number }> = {},
   barrierOrder: Record<string, number> = {},
+  focusNodeOffsets: Record<string, { x: number; y: number }> = {},
 ): { nodes: Node[]; inlinePositions: Record<string, { x: number; y: number }> } {
   if (!focusedNodeId) {
     return { nodes, inlinePositions: {} };
@@ -1051,9 +1087,19 @@ function applyFocusLayout(
   }));
   const nodeMap = new Map(updatedNodes.map((node) => [node.id, node]));
 
-  const startWidth = startNode.width ?? DEFAULT_PARENT_NODE_WIDTH;
-  const startHeight = startNode.height ?? DEFAULT_PARENT_NODE_HEIGHT;
-  const baselineY = (startNode.position?.y ?? 0) + startHeight / 2;
+  const startRef = nodeMap.get(startNode.id);
+  const endRef = nodeMap.get(endNode.id);
+  if (!startRef || !endRef) {
+    return { nodes, inlinePositions: {} };
+  }
+
+  const startOffset = isThreatFocus ? focusNodeOffsets[focusedNodeId] ?? { x: 0, y: 0 } : { x: 0, y: 0 };
+  startRef.position.x = (startRef.position.x ?? 0) + startOffset.x;
+  startRef.position.y = (startRef.position.y ?? 0) + startOffset.y;
+
+  const startWidth = startRef.width ?? DEFAULT_PARENT_NODE_WIDTH;
+  const startHeight = startRef.height ?? DEFAULT_PARENT_NODE_HEIGHT;
+  const baselineY = (startRef.position?.y ?? 0) + startHeight / 2;
 
   const sortedBarriers = [...barrierNodes].sort((a, b) => {
     const orderA = barrierOrder[a.id];
@@ -1066,8 +1112,8 @@ function applyFocusLayout(
     return (a.position?.x ?? 0) - (b.position?.x ?? 0);
   });
 
-  let previousEndX = (startNode.position?.x ?? 0) + startWidth;
-  let previousBottom = (startNode.position?.y ?? 0) - startHeight / 2;
+  let previousEndX = (startRef.position?.x ?? 0) + startWidth;
+  let previousBottom = (startRef.position?.y ?? 0) - startHeight / 2;
 
   sortedBarriers.forEach((barrierNode) => {
     const target = nodeMap.get(barrierNode.id);
@@ -1095,23 +1141,12 @@ function applyFocusLayout(
     previousBottom = target.position.y + height;
   });
 
-  const endRef = nodeMap.get(endNode.id);
-  if (endRef) {
-    const endHeight = endRef.height ?? DEFAULT_PARENT_NODE_HEIGHT;
-    endRef.position.y = baselineY - endHeight / 2;
-    const currentEndX = endRef.position.x ?? 0;
-    const requiredEndX = previousEndX + FOCUS_BARRIER_GAP;
-    if (requiredEndX > currentEndX) {
-      const deltaX = requiredEndX - currentEndX;
-      endRef.position.x = requiredEndX;
-      if (isThreatFocus && hazardNode) {
-        const hazardRef = nodeMap.get(hazardNode.id);
-        if (hazardRef) {
-          hazardRef.position.x = (hazardRef.position.x ?? 0) + deltaX;
-        }
-      }
-    }
-  }
+  const endHeight = endRef.height ?? DEFAULT_PARENT_NODE_HEIGHT;
+  const endOffset = !isThreatFocus ? focusNodeOffsets[focusedNodeId] ?? { x: 0, y: 0 } : { x: 0, y: 0 };
+  endRef.position.y = baselineY - endHeight / 2 + endOffset.y;
+  const desiredEndX = (endRef.position.x ?? 0) + endOffset.x;
+  const requiredEndX = previousEndX + FOCUS_BARRIER_GAP;
+  endRef.position.x = Math.max(desiredEndX, requiredEndX);
 
   const hazardRef =
     hazardNode && nodeMap.has(hazardNode.id)
