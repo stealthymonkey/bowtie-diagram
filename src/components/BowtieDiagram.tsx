@@ -203,6 +203,12 @@ export function BowtieDiagramComponent({
     [],
   );
 
+  const focusLabel = useMemo(() => {
+    if (!focusedNodeId) return null;
+    const node = rawNodes.find((n) => n.id === focusedNodeId);
+    return node?.data?.label ?? null;
+  }, [focusedNodeId, rawNodes]);
+
   if (error) {
     return (
       <div style={fallbackStyles.container}>
@@ -218,12 +224,6 @@ export function BowtieDiagramComponent({
       </div>
     );
   }
-
-  const focusLabel = useMemo(() => {
-    if (!focusedNodeId) return null;
-    const node = rawNodes.find((n) => n.id === focusedNodeId);
-    return node?.data?.label ?? null;
-  }, [focusedNodeId, rawNodes]);
 
   const selectedDetails = getNodeDetails(
     selectedNodeId,
@@ -284,24 +284,6 @@ export function BowtieDiagramComponent({
             </button>
           </div>
         ) : null}
-
-        <div className="bowtie-toolbar__group">
-          <label htmlFor="severity-filter">Severity focus</label>
-          <select
-            id="severity-filter"
-            className="bowtie-select"
-            value={severityFilter}
-            onChange={(event) => {
-              setSeverityFilter(event.target.value as SeverityFilter);
-            }}
-          >
-            <option value="all">All severities</option>
-            <option value="low">Low only</option>
-            <option value="medium">Medium +</option>
-            <option value="high">High +</option>
-            <option value="critical">Critical only</option>
-          </select>
-        </div>
 
         <div className="bowtie-toolbar__group bowtie-toolbar__group--row">
           <label>Zoom</label>
