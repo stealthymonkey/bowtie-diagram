@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import {
   ReactFlow,
@@ -104,6 +104,8 @@ export function BowtieDiagramComponent({
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
+  const [barrierOffsets, setBarrierOffsets] = useState<Record<string, { x: number; y: number }>>({});
+  const inlineBarrierLayoutRef = useRef<Record<string, { x: number; y: number }>>({});
 
   const threatMap = useMemo(() => buildThreatMap(diagram.threats), [diagram]);
   const consequenceMap = useMemo(
@@ -176,10 +178,16 @@ export function BowtieDiagramComponent({
       return;
     }
     const scoped = filterGraphForFocus(rawNodes, baseEdges, focusedNodeId);
-    const laidOutNodes = applyFocusLayout(scoped.nodes, focusedNodeId);
+    const offset = focusedNodeId ? barrierOffsets[focusedNodeId] ?? { x: 0, y: 0 } : { x: 0, y: 0 };
+    const { nodes: laidOutNodes, inlinePositions } = applyFocusLayout(
+      scoped.nodes,
+      focusedNodeId,
+      offset,
+    );
+    inlineBarrierLayoutRef.current = inlinePositions;
     setEdges(scoped.edges);
     setNodes(applyPresentation(laidOutNodes, filters));
-  }, [rawNodes, baseEdges, filters, focusedNodeId]);
+  }, [rawNodes, baseEdges, filters, focusedNodeId, barrierOffsets]);
 
   const handleZoom = (direction: 'in' | 'out' | 'reset') => {
     if (!reactFlowInstance) return;
@@ -193,10 +201,69 @@ export function BowtieDiagramComponent({
 
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
-      setRawNodes((nds) => applyNodeChanges(changes, nds));
+      let updatedRawNodes: Node[] | null = null;
+      setRawNodes((nds) => {
+        const next = applyNodeChanges(changes, nds);
+        updatedRawNodes = next;
+        return next;
+      });
       setNodes((nds) => applyNodeChanges(changes, nds));
+
+      if (!focusedNodeId || !updatedRawNodes) {
+        return;
+      }
+
+      const movedBarrierIds = new Set(
+        changes
+          .filter((change) => change.type === 'position')
+          .map((change) => change.id),
+      );
+
+      if (!movedBarrierIds.size) {
+        return;
+      }
+
+      const deltas: { x: number; y: number }[] = [];
+      updatedRawNodes.forEach((node) => {
+        if (node.type !== 'barrier' || !movedBarrierIds.has(node.id)) return;
+        const previous = inlineBarrierLayoutRef.current[node.id];
+        if (!previous) return;
+        const currentPosition = node.position ?? { x: 0, y: 0 };
+        deltas.push({
+          x: currentPosition.x - previous.x,
+          y: currentPosition.y - previous.y,
+        });
+      });
+
+      if (!deltas.length) {
+        return;
+      }
+
+      const averageDelta = deltas.reduce(
+        (acc, delta) => ({
+          x: acc.x + delta.x / deltas.length,
+          y: acc.y + delta.y / deltas.length,
+        }),
+        { x: 0, y: 0 },
+      );
+
+      if (!averageDelta.x && !averageDelta.y) {
+        return;
+      }
+
+      setBarrierOffsets((prev) => {
+        const current = prev[focusedNodeId] ?? { x: 0, y: 0 };
+        const next = {
+          x: current.x + averageDelta.x,
+          y: current.y + averageDelta.y,
+        };
+        return {
+          ...prev,
+          [focusedNodeId]: next,
+        };
+      });
     },
-    [],
+    [focusedNodeId],
   );
 
   const handleNodeDoubleClick = useCallback(
@@ -935,15 +1002,26 @@ function buildConsequenceMap(consequences: Consequence[]): ConsequenceMap {
   return map;
 }
 
-function applyFocusLayout(nodes: Node[], focusedNodeId: string | null): Node[] {
-  if (!focusedNodeId) return nodes;
+function applyFocusLayout(
+  nodes: Node[],
+  focusedNodeId: string | null,
+  barrierOffset: { x: number; y: number } = { x: 0, y: 0 },
+): { nodes: Node[]; inlinePositions: Record<string, { x: number; y: number }> } {
+  if (!focusedNodeId) {
+    return { nodes, inlinePositions: {} };
+  }
   const barrierNodes = nodes.filter((node) => node.type === 'barrier');
-  if (!barrierNodes.length) return nodes;
+  if (!barrierNodes.length) {
+    return { nodes, inlinePositions: {} };
+  }
 
   const focusNode = nodes.find((node) => node.id === focusedNodeId);
   const topEventNode = nodes.find((node) => node.type === 'topEvent');
-  if (!focusNode || !topEventNode) return nodes;
+  if (!focusNode || !topEventNode) {
+    return { nodes, inlinePositions: {} };
+  }
 
+  const inlinePositions: Record<string, { x: number; y: number }> = {};
   const isThreatFocus = focusedNodeId.startsWith('threat-');
   const startNode = isThreatFocus ? focusNode : topEventNode;
   const endNode = isThreatFocus ? topEventNode : focusNode;
@@ -957,14 +1035,14 @@ function applyFocusLayout(nodes: Node[], focusedNodeId: string | null): Node[] {
 
   const startWidth = startNode.width ?? DEFAULT_PARENT_NODE_WIDTH;
   const startHeight = startNode.height ?? DEFAULT_PARENT_NODE_HEIGHT;
-  const baselineY = (startNode.position?.y ?? 0) + startHeight / 2;
+  const baselineY = (startNode.position?.y ?? 0) + startHeight / 2 + barrierOffset.y;
 
   const sortedBarriers = [...barrierNodes].sort(
     (a, b) => (a.position?.y ?? 0) - (b.position?.y ?? 0),
   );
 
   let cursorX =
-    (startNode.position?.x ?? 0) + startWidth + FOCUS_BARRIER_GAP;
+    (startNode.position?.x ?? 0) + startWidth + FOCUS_BARRIER_GAP + barrierOffset.x;
 
   sortedBarriers.forEach((barrierNode) => {
     const target = nodeMap.get(barrierNode.id);
@@ -973,6 +1051,7 @@ function applyFocusLayout(nodes: Node[], focusedNodeId: string | null): Node[] {
     const height = target.height ?? DEFAULT_BARRIER_NODE_HEIGHT;
     target.position.x = cursorX;
     target.position.y = baselineY - height / 2;
+    inlinePositions[target.id] = { x: target.position.x, y: target.position.y };
     cursorX += width + FOCUS_BARRIER_GAP;
   });
 
@@ -994,7 +1073,7 @@ function applyFocusLayout(nodes: Node[], focusedNodeId: string | null): Node[] {
     }
   }
 
-  return updatedNodes;
+  return { nodes: updatedNodes, inlinePositions };
 }
 
 function filterGraphForFocus(
