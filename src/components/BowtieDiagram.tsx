@@ -538,8 +538,6 @@ function createReactFlowGraph(
         level: layoutNode.level,
         description: '',
       },
-      width: layoutNode.width,
-      height: layoutNode.height,
       draggable: layoutNode.type !== 'topEvent',
     };
 
