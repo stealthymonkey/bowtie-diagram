@@ -27,6 +27,7 @@ const BARRIER_HORIZONTAL_GAP = 80;
 const BARRIER_VERTICAL_GAP = 32;
 const THREAT_COLUMN_GAP = 20;
 const CONSEQUENCE_COLUMN_GAP = 42;
+const PRIMARY_NODE_MIN_GAP = 12;
 
 /**
  * Converts bowtie diagram to ELK graph structure
