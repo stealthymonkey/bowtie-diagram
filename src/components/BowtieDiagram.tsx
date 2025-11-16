@@ -64,10 +64,11 @@ const HAZARD_VERTICAL_GAP = 40;
 const TOP_EVENT_NODE_SIZE = 200;
 const DEFAULT_PARENT_NODE_WIDTH = 180;
 const DEFAULT_PARENT_NODE_HEIGHT = 80;
-const DEFAULT_BARRIER_NODE_WIDTH = 180;
-const DEFAULT_BARRIER_NODE_HEIGHT = 60;
-const FOCUS_BARRIER_GAP = 36;
+const DEFAULT_BARRIER_NODE_WIDTH = 240;
+const DEFAULT_BARRIER_NODE_HEIGHT = 120;
+const FOCUS_BARRIER_GAP = 48;
 const FOCUS_VERTICAL_RANGE = 140;
+const FOCUS_VERTICAL_GAP = 16;
 
 const severityLevelMap: Record<Severity, number> = {
   low: 1,
@@ -532,15 +533,17 @@ function createReactFlowGraph(
       },
       sourcePosition: getSourcePosition(layoutNode.type),
       targetPosition: getTargetPosition(layoutNode.type),
-    data: {
-      label: layoutNode.label,
-      level: layoutNode.level,
-      description: '',
-    },
-    draggable: true,
-  };
+      data: {
+        label: layoutNode.label,
+        level: layoutNode.level,
+        description: '',
+      },
+      width: layoutNode.width,
+      height: layoutNode.height,
+      draggable: layoutNode.type !== 'topEvent',
+    };
 
-  if (layoutNode.type === 'threat') {
+    if (layoutNode.type === 'threat') {
     const threatId = layoutNode.id.replace('threat-', '');
     const threat = threatMap[threatId];
     base.data = {
@@ -572,13 +575,15 @@ function createReactFlowGraph(
       hasChildren: Boolean(consequence?.subConsequences?.length),
       appearance: consequence?.appearance,
     };
-  }
+    }
 
     if (layoutNode.type === 'barrier') {
       const barrierId = extractBarrierId(layoutNode.id);
       const barrier = barrierId ? barrierMap.get(barrierId) : undefined;
       base.sourcePosition = 'right';
       base.targetPosition = 'left';
+      base.width = DEFAULT_BARRIER_NODE_WIDTH;
+      base.height = DEFAULT_BARRIER_NODE_HEIGHT;
       base.data = {
         ...base.data,
         label: barrier?.label ?? layoutNode.label,
@@ -593,6 +598,9 @@ function createReactFlowGraph(
     }
 
     if (layoutNode.type === 'topEvent') {
+      base.draggable = false;
+      base.width = layoutNode.width ?? TOP_EVENT_NODE_SIZE;
+      base.height = layoutNode.height ?? TOP_EVENT_NODE_SIZE;
       base.data = {
         ...base.data,
         label: diagram.topEvent.label,
@@ -841,7 +849,7 @@ function createHazardReactFlowNode(
       label: hazard.label,
       description: hazard.description,
     },
-    draggable: true,
+    draggable: false,
     width: HAZARD_NODE_WIDTH,
     height: HAZARD_NODE_HEIGHT,
   };
@@ -1021,6 +1029,7 @@ function applyFocusLayout(
   );
 
   let previousEndX = (startNode.position?.x ?? 0) + startWidth;
+  let previousBottom = (startNode.position?.y ?? 0) - startHeight / 2;
 
   sortedBarriers.forEach((barrierNode) => {
     const target = nodeMap.get(barrierNode.id);
@@ -1037,9 +1046,15 @@ function applyFocusLayout(
     const maxTop = baselineY - height / 2 + FOCUS_VERTICAL_RANGE;
     proposedTop = clamp(proposedTop, minTop, maxTop);
 
+    const minStackTop = previousBottom + FOCUS_VERTICAL_GAP;
+    if (proposedTop < minStackTop) {
+      proposedTop = minStackTop;
+    }
+
     target.position.y = proposedTop;
     inlinePositions[target.id] = { x: target.position.x, y: target.position.y };
     previousEndX = target.position.x + width;
+    previousBottom = target.position.y + height;
   });
 
   const endRef = nodeMap.get(endNode.id);
@@ -1056,6 +1071,18 @@ function applyFocusLayout(
         if (hazardRef) {
           hazardRef.position.x = (hazardRef.position.x ?? 0) + deltaX;
         }
+      }
+    }
+    if (hazardNode) {
+      const hazardRef = nodeMap.get(hazardNode.id);
+      if (hazardRef) {
+        const endWidth = endRef.width ?? TOP_EVENT_NODE_SIZE;
+        const hazardWidth = hazardRef.width ?? HAZARD_NODE_WIDTH;
+        hazardRef.position.x =
+          (endRef.position?.x ?? 0) + (endWidth - hazardWidth) / 2;
+        const hazardHeight = hazardRef.height ?? HAZARD_NODE_HEIGHT;
+        hazardRef.position.y =
+          (endRef.position?.y ?? 0) - hazardHeight - HAZARD_VERTICAL_GAP;
       }
     }
   }

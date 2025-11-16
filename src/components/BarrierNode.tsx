@@ -47,9 +47,7 @@ export const BarrierNode = memo(({ data }: NodeProps) => {
         opacity: dimmed ? 0.35 : 1,
         borderRadius: '12px',
         padding: '10px 14px',
-        minWidth: '160px',
-        maxWidth: '260px',
-        width: 'fit-content',
+        width: '240px',
         boxShadow: highlighted
           ? '0 12px 24px rgba(15, 118, 110, 0.25)'
           : '0 6px 14px rgba(148, 163, 184, 0.3)',

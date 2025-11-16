@@ -255,12 +255,12 @@ function convertElkToLayoutNodes(elkGraph: any): LayoutNode[] {
 
 function distributeBarriers(nodes: LayoutNode[]): LayoutNode[] {
   const nodeMap = new Map(nodes.map((node) => [node.id, node]));
-  const DEFAULT_BARRIER_WIDTH = 160;
-  const DEFAULT_BARRIER_HEIGHT = 60;
+  const DEFAULT_BARRIER_WIDTH = 240;
+  const DEFAULT_BARRIER_HEIGHT = 120;
   const DEFAULT_PARENT_WIDTH = 180;
   const DEFAULT_PARENT_HEIGHT = 80;
-  const HORIZONTAL_GAP = 60;
-  const VERTICAL_GAP = 24;
+  const HORIZONTAL_GAP = 80;
+  const VERTICAL_GAP = 32;
 
   interface BarrierGroup {
     parentId: string;
