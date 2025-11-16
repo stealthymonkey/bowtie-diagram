@@ -88,10 +88,10 @@ export interface LayoutNode {
   label: string;
   level: number;
   parentId?: string;
+  sequenceIndex?: number;
   x?: number;
   y?: number;
   width?: number;
   height?: number;
   children?: LayoutNode[];
 }
-

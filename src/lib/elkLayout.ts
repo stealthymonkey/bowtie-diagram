@@ -15,7 +15,7 @@ const defaultOptions: LayoutOptions = {
   viewLevel: 0,
   spacing: {
     horizontal: 200,
-    vertical: 150,
+    vertical: 100,
   },
 };
 
@@ -38,9 +38,9 @@ export async function layoutBowtieDiagram(
     layoutOptions: {
       'elk.algorithm': 'layered',
       'elk.direction': 'RIGHT',
-      'elk.spacing.nodeNode': String(opts.spacing.horizontal),
+      'elk.spacing.nodeNode': String(opts.spacing.vertical),
       'elk.spacing.edgeNode': String(opts.spacing.horizontal * 0.5),
-      'elk.layered.spacing.nodeNodeBetweenLayers': String(opts.spacing.vertical),
+      'elk.layered.spacing.nodeNodeBetweenLayers': String(opts.spacing.horizontal),
       'elk.layered.nodePlacement.strategy': 'SIMPLE',
       'elk.spacing.edgeEdge': '20',
       'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
@@ -107,7 +107,7 @@ function createThreatNode(threat: Threat, allBarriers: Barrier[]): any {
       severity: threat.severity,
       parentId: threat.parentId,
     },
-    children: preventiveBarriers.map(barrier => ({
+    children: preventiveBarriers.map((barrier, index) => ({
       id: `barrier-preventive-${barrier.id}`,
       labels: [{ text: barrier.label }],
       width: 160,
@@ -116,6 +116,7 @@ function createThreatNode(threat: Threat, allBarriers: Barrier[]): any {
         type: 'barrier',
         barrierType: 'preventive',
         parentId: threat.id,
+        sequenceIndex: index,
       },
     })),
   };
@@ -149,7 +150,7 @@ function createConsequenceNode(consequence: Consequence, allBarriers: Barrier[])
       severity: consequence.severity,
       parentId: consequence.parentId,
     },
-    children: mitigativeBarriers.map(barrier => ({
+    children: mitigativeBarriers.map((barrier, index) => ({
       id: `barrier-mitigative-${barrier.id}`,
       labels: [{ text: barrier.label }],
       width: 160,
@@ -158,6 +159,7 @@ function createConsequenceNode(consequence: Consequence, allBarriers: Barrier[])
         type: 'barrier',
         barrierType: 'mitigative',
         parentId: consequence.id,
+        sequenceIndex: index,
       },
     })),
   };
@@ -234,6 +236,7 @@ function convertElkToLayoutNodes(elkGraph: any): LayoutNode[] {
         label: node.labels?.[0]?.text || '',
         level: node.properties.level || 0,
         parentId: node.properties.parentId,
+        sequenceIndex: node.properties.sequenceIndex,
         x: absoluteX,
         y: absoluteY,
         width: node.width || 100,
@@ -290,7 +293,16 @@ function distributeBarriers(nodes: LayoutNode[]): LayoutNode[] {
     const parentWidth = parent.width ?? DEFAULT_PARENT_WIDTH;
     const parentCenterY = (parent.y ?? 0) + parentHeight / 2;
 
-    const sorted = group.nodes.sort((a, b) => (a.y ?? 0) - (b.y ?? 0));
+    const sorted = group.nodes.sort((a, b) => {
+      const seqA = a.sequenceIndex;
+      const seqB = b.sequenceIndex;
+      if (seqA != null && seqB != null) {
+        return seqA - seqB;
+      }
+      if (seqA != null) return -1;
+      if (seqB != null) return 1;
+      return (a.y ?? 0) - (b.y ?? 0);
+    });
     const totalHeight = sorted.reduce((acc, barrier, index) => {
       const height = barrier.height ?? DEFAULT_BARRIER_HEIGHT;
       return acc + height + (index > 0 ? VERTICAL_GAP : 0);

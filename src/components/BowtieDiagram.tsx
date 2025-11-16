@@ -178,6 +178,11 @@ export function BowtieDiagramComponent({
   }, [diagram, threatMap, consequenceMap, barrierMap]);
 
   useEffect(() => {
+    setBarrierOffsets({});
+    setFocusNodeOffsets({});
+  }, [focusedNodeId]);
+
+  useEffect(() => {
     if (!rawNodes.length) {
       setNodes([]);
       setEdges([]);
@@ -237,6 +242,9 @@ export function BowtieDiagramComponent({
         );
         const next = applyNodeChanges(constrainedChanges, nds);
         updatedRawNodes = next;
+        if (focusedNodeId) {
+          return nds;
+        }
         return next;
       });
       setNodes((nds) => applyNodeChanges(constrainedChanges, nds));
