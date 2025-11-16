@@ -53,6 +53,36 @@ export const preventiveBarriers: Barrier[] = [
     owner: 'Driver Coach',
   },
   {
+    id: 'barrier-weather-schedule-adjustment',
+    label: 'Driver listens to weather report and adjusts schedule',
+    description: 'Drivers monitor forecasts and reschedule departures to avoid heavy rain on the route.',
+    type: 'preventive',
+    effectiveness: 'medium',
+    threatId: 'threat-slippery-road',
+    mechanism: 'activeHuman',
+    owner: 'Supervisor',
+  },
+  {
+    id: 'barrier-defensive-driving-training',
+    label: 'Defensive driving',
+    description: 'Drivers complete defensive driving refreshers with focus on traction management.',
+    type: 'preventive',
+    effectiveness: 'high',
+    threatId: 'threat-slippery-road',
+    mechanism: 'activeHuman',
+    owner: 'HSE Manager',
+  },
+  {
+    id: 'barrier-abs-steering-control',
+    label: 'Anti-lock braking system maintains steering control',
+    description: 'ABS keeps steering responsive on slick roads by preventing wheel lockup.',
+    type: 'preventive',
+    effectiveness: 'high',
+    threatId: 'threat-slippery-road',
+    mechanism: 'activeHardware',
+    owner: 'Engineering Manager',
+  },
+  {
     id: 'barrier-surface-monitoring',
     label: 'Road surface monitoring bulletin',
     description: 'Operations issues traction alerts and mandatory speed adjustments for slippery routes.',
@@ -72,5 +102,27 @@ export const preventiveBarriers: Barrier[] = [
     mechanism: 'activeHuman',
     owner: 'Shift Supervisor',
   },
+  {
+    id: 'barrier-voice-dispatch',
+    label: 'Voice-activated Dispatch System reduces manual input and screen activation while driving',
+    description:
+      'Hands-free dispatch interface allows drivers to keep eyes on the road even when visibility is limited.',
+    type: 'preventive',
+    effectiveness: 'high',
+    threatId: 'threat-poor-visibility',
+    mechanism: 'activeHardware',
+    owner: 'Engineering Manager',
+  },
+  {
+    id: 'barrier-lane-alert-response',
+    label:
+      'Driver detects alerts triggered from the lane departure warning system and prevents lane drift',
+    description:
+      'Lane-departure warning cues prompt immediate human response to maintain lane position through blind stretches.',
+    type: 'preventive',
+    effectiveness: 'high',
+    threatId: 'threat-poor-visibility',
+    mechanism: 'hybrid',
+    owner: 'Supervisor',
+  },
 ];
-

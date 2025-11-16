@@ -110,6 +110,7 @@ export function BowtieDiagramComponent({
   const [barrierOrder, setBarrierOrder] = useState<Record<string, number>>({});
   const inlineBarrierLayoutRef = useRef<Record<string, { x: number; y: number }>>({});
   const focusNodePositionRef = useRef<{ id: string; x: number; y: number } | null>(null);
+  const focusNodeAnchorRef = useRef<{ id: string; x: number; y: number } | null>(null);
 
   const threatMap = useMemo(() => buildThreatMap(diagram.threats), [diagram]);
   const consequenceMap = useMemo(
@@ -194,6 +195,16 @@ export function BowtieDiagramComponent({
     if (focusedNodeId) {
       const focusNode = laidOutNodes.find((node) => node.id === focusedNodeId);
       if (focusNode) {
+        if (
+          !focusNodeAnchorRef.current ||
+          focusNodeAnchorRef.current.id !== focusedNodeId
+        ) {
+          focusNodeAnchorRef.current = {
+            id: focusedNodeId,
+            x: focusNode.position?.x ?? 0,
+            y: focusNode.position?.y ?? 0,
+          };
+        }
         focusNodePositionRef.current = {
           id: focusedNodeId,
           x: focusNode.position?.x ?? 0,
@@ -202,6 +213,7 @@ export function BowtieDiagramComponent({
       }
     } else {
       focusNodePositionRef.current = null;
+      focusNodeAnchorRef.current = null;
     }
     setEdges(scoped.edges);
     setNodes(applyPresentation(laidOutNodes, filters));
@@ -213,13 +225,21 @@ export function BowtieDiagramComponent({
 
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
+      const focusAnchor = focusNodeAnchorRef.current;
+      let constrainedChanges = changes;
       let updatedRawNodes: Node[] | null = null;
       setRawNodes((nds) => {
-        const next = applyNodeChanges(changes, nds);
+        constrainedChanges = constrainNodeChanges(
+          changes,
+          nds,
+          focusedNodeId,
+          focusAnchor,
+        );
+        const next = applyNodeChanges(constrainedChanges, nds);
         updatedRawNodes = next;
         return next;
       });
-      setNodes((nds) => applyNodeChanges(changes, nds));
+      setNodes((nds) => applyNodeChanges(constrainedChanges, nds));
 
       if (!focusedNodeId || !updatedRawNodes) {
         return;
@@ -228,7 +248,7 @@ export function BowtieDiagramComponent({
       const deltaEntries: Array<[string, number]> = [];
 
       updatedRawNodes.forEach((node) => {
-        const change = changes.find(
+        const change = constrainedChanges.find(
           (c) => c.type === 'position' && c.id === node.id,
         );
         if (!change || node.type !== 'barrier') {
@@ -1038,6 +1058,10 @@ function applyFocusLayout(
   if (!focusNode || !topEventNode) {
     return { nodes, inlinePositions: {} };
   }
+  const topEventBasePosition = {
+    x: topEventNode.position?.x ?? 0,
+    y: topEventNode.position?.y ?? 0,
+  };
 
   const inlinePositions: Record<string, { x: number; y: number }> = {};
   const isThreatFocus = focusedNodeId.startsWith('threat-');
@@ -1125,6 +1149,30 @@ function applyFocusLayout(
     const hazardHeight = hazardRef.height ?? HAZARD_NODE_HEIGHT;
     hazardRef.position.y =
       (topEventRef.position?.y ?? 0) - hazardHeight - HAZARD_VERTICAL_GAP;
+  }
+
+  if (topEventRef) {
+    const nextTopPos = {
+      x: topEventRef.position?.x ?? 0,
+      y: topEventRef.position?.y ?? 0,
+    };
+    const shiftX = topEventBasePosition.x - nextTopPos.x;
+    const shiftY = topEventBasePosition.y - nextTopPos.y;
+    if (shiftX || shiftY) {
+      updatedNodes.forEach((node) => {
+        const currentPos = node.position ?? { x: 0, y: 0 };
+        node.position = {
+          x: currentPos.x + shiftX,
+          y: currentPos.y + shiftY,
+        };
+        if (inlinePositions[node.id]) {
+          inlinePositions[node.id] = {
+            x: inlinePositions[node.id].x + shiftX,
+            y: inlinePositions[node.id].y + shiftY,
+          };
+        }
+      });
+    }
   }
 
   return { nodes: updatedNodes, inlinePositions };
@@ -1234,6 +1282,62 @@ function clamp(value: number, min: number, max: number) {
     return max;
   }
   return value;
+}
+
+function constrainNodeChanges(
+  changes: NodeChange[],
+  nodes: Node[],
+  focusedNodeId: string | null,
+  focusAnchor: { id: string; x: number; y: number } | null,
+) {
+  if (!changes.length) {
+    return changes;
+  }
+
+  const nodeMap = new Map(nodes.map((node) => [node.id, node]));
+  let mutated = false;
+
+  const adjusted = changes.map((change) => {
+    if (change.type !== 'position' || !change.position) {
+      return change;
+    }
+    const node = nodeMap.get(change.id);
+    if (!node) {
+      return change;
+    }
+
+    let draft: NodeChange | null = null;
+
+    if (node.type === 'barrier') {
+      const lockedX = node.position?.x ?? 0;
+      if ((change.position.x ?? lockedX) !== lockedX) {
+        draft = draft ?? { ...change, position: { ...change.position } };
+        draft.position!.x = lockedX;
+      }
+    }
+
+    const anchorMatches =
+      focusedNodeId &&
+      node.id === focusedNodeId &&
+      (node.type === 'threat' || node.type === 'consequence') &&
+      focusAnchor?.id === node.id;
+    if (anchorMatches) {
+      const anchorX = focusAnchor!.x;
+      const proposedX = change.position.x ?? anchorX;
+      if (proposedX > anchorX) {
+        draft = draft ?? { ...change, position: { ...change.position } };
+        draft.position!.x = anchorX;
+      }
+    }
+
+    if (draft) {
+      mutated = true;
+      return draft;
+    }
+    return change;
+  });
+
+  return mutated ? adjusted : changes;
 }
 
 const fallbackStyles: Record<string, CSSProperties> = {
