@@ -62,11 +62,6 @@
   width: 150px;
 }
 
-.bowtie-toolbar__controls {
-  display: flex;
-  gap: 0.4rem;
-}
-
 .bowtie-button {
   border: none;
   border-radius: 10px;

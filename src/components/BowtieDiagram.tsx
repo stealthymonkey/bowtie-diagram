@@ -3,7 +3,6 @@ import type { CSSProperties } from 'react';
 import {
   ReactFlow,
   Background,
-  Controls,
   applyNodeChanges,
   type Edge,
   type Node,
@@ -212,16 +211,6 @@ export function BowtieDiagramComponent({
     }
   }, [rawNodes, baseEdges, filters, focusedNodeId, barrierOffsets, barrierOrder, focusNodeOffsets, reactFlowInstance]);
 
-  const handleZoom = (direction: 'in' | 'out' | 'reset') => {
-    if (!reactFlowInstance) return;
-    if (direction === 'reset') {
-      reactFlowInstance.fitView({ padding: 0.2, duration: 300 });
-      return;
-    }
-    const delta = direction === 'in' ? 0.2 : -0.2;
-    reactFlowInstance.zoomTo(reactFlowInstance.getZoom() + delta, { duration: 200 });
-  };
-
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
       let updatedRawNodes: Node[] | null = null;
@@ -385,60 +374,35 @@ export function BowtieDiagramComponent({
           </div>
         ) : null}
 
-        <div className="bowtie-toolbar__group bowtie-toolbar__group--row">
-          <label>Zoom</label>
-          <div className="bowtie-toolbar__controls">
-            <button
-              type="button"
-              className="bowtie-button"
-              onClick={() => handleZoom('out')}
-            >
-              –
-            </button>
-            <button
-              type="button"
-              className="bowtie-button"
-              onClick={() => handleZoom('in')}
-            >
-              +
-            </button>
-            <button
-              type="button"
-              className="bowtie-button"
-              onClick={() => handleZoom('reset')}
-            >
-              Reset
-            </button>
-          </div>
-        </div>
       </header>
 
       <section className="bowtie-body">
         <div className="bowtie-canvas">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          nodeTypes={nodeTypes}
-          edgeTypes={edgeTypes}
-          defaultEdgeOptions={DEFAULT_EDGE_OPTIONS}
-          fitView
-          minZoom={0.25}
-          maxZoom={1.5}
-          edgesFocusable={false}
-          panOnDrag
-          zoomOnScroll
-          nodesDraggable
-          onNodesChange={handleNodesChange}
-          onInit={(instance) => setReactFlowInstance(instance)}
-          onNodeClick={(_, node) => setSelectedNodeId(node.id)}
-          onNodeDoubleClick={handleNodeDoubleClick}
-          onPaneClick={() => {
-            setSelectedNodeId(null);
-            setFocusedNodeId(null);
-          }}
-        >
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
+            defaultEdgeOptions={DEFAULT_EDGE_OPTIONS}
+            fitView
+            minZoom={0.25}
+            maxZoom={1.5}
+            edgesFocusable={false}
+            panOnDrag
+            zoomOnScroll={false}
+            zoomOnDoubleClick={false}
+            zoomOnPinch={false}
+            nodesDraggable
+            onNodesChange={handleNodesChange}
+            onInit={(instance) => setReactFlowInstance(instance)}
+            onNodeClick={(_, node) => setSelectedNodeId(node.id)}
+            onNodeDoubleClick={handleNodeDoubleClick}
+            onPaneClick={() => {
+              setSelectedNodeId(null);
+              setFocusedNodeId(null);
+            }}
+          >
             <Background />
-            <Controls showInteractive={false} position="bottom-right" />
           </ReactFlow>
 
           <div className="bowtie-legend">
