@@ -2,14 +2,25 @@ import type { Barrier } from './types';
 
 export const mitigativeBarriers: Barrier[] = [
   {
-    id: 'barrier-crash-attenuator',
-    label: 'Crash attenuator infrastructure',
-    description: 'Impact attenuators and guard rails reduce severity when hitting fixed objects.',
+    id: 'barrier-forward-collision-defensive-driving',
+    label: 'Forward Collision Warning System and Defensive Driving',
+    description:
+      'Onboard collision warning tech and trained defensive maneuvers keep the vehicle aligned and bleed off speed before impact.',
+    type: 'mitigative',
+    effectiveness: 'high',
+    consequenceId: 'consequence-fixed-object',
+    mechanism: 'hybrid',
+    owner: 'Supervisor',
+  },
+  {
+    id: 'barrier-crumble-zone',
+    label: 'Crumble Zone',
+    description: 'Engineered crumple structures absorb crash forces before they reach the cab.',
     type: 'mitigative',
     effectiveness: 'medium',
     consequenceId: 'consequence-fixed-object',
     mechanism: 'passiveHardware',
-    owner: 'Road Maintenance Lead',
+    owner: 'EN Engineer',
   },
   {
     id: 'barrier-driver-restraints',
@@ -42,4 +53,3 @@ export const mitigativeBarriers: Barrier[] = [
     owner: 'Emergency Coordinator',
   },
 ];
-

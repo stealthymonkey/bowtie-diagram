@@ -111,6 +111,9 @@ export function BowtieDiagramComponent({
   const inlineBarrierLayoutRef = useRef<Record<string, { x: number; y: number }>>({});
   const focusNodePositionRef = useRef<{ id: string; x: number; y: number } | null>(null);
   const focusNodeAnchorRef = useRef<{ id: string; x: number; y: number } | null>(null);
+  const hasInitialFitRef = useRef(false);
+  const lastViewportFocusRef = useRef<string | null>(null);
+  const filterSignatureRef = useRef<string | null>(null);
 
   const threatMap = useMemo(() => buildThreatMap(diagram.threats), [diagram]);
   const consequenceMap = useMemo(
@@ -162,6 +165,9 @@ export function BowtieDiagramComponent({
         setRawNodes(rfNodes);
         setBaseEdges(rfEdges);
         setBarrierOrder(orderMap);
+        hasInitialFitRef.current = false;
+        lastViewportFocusRef.current = null;
+        filterSignatureRef.current = null;
         setLoading(false);
       })
       .catch((err) => {
@@ -223,8 +229,19 @@ export function BowtieDiagramComponent({
     setEdges(scoped.edges);
     setNodes(applyPresentation(laidOutNodes, filters));
 
-    if (reactFlowInstance) {
-      reactFlowInstance.fitView({ padding: 0.15, duration: 300 });
+    const filterSignature = `${filters.text}|${filters.severity}`;
+    const filtersChanged = filterSignatureRef.current !== filterSignature;
+    const focusChanged = lastViewportFocusRef.current !== focusedNodeId;
+    const needsInitialFit = !hasInitialFitRef.current && rawNodes.length > 0;
+    const shouldFitView = needsInitialFit || focusChanged || filtersChanged;
+
+    if (reactFlowInstance && shouldFitView) {
+      const shouldSnapToFocus = focusChanged && Boolean(focusedNodeId);
+      const duration = shouldSnapToFocus ? 0 : needsInitialFit ? 300 : 180;
+      reactFlowInstance.fitView({ padding: 0.15, duration });
+      hasInitialFitRef.current = true;
+      lastViewportFocusRef.current = focusedNodeId ?? null;
+      filterSignatureRef.current = filterSignature;
     }
   }, [rawNodes, baseEdges, filters, focusedNodeId, barrierOffsets, barrierOrder, focusNodeOffsets, reactFlowInstance]);
 
