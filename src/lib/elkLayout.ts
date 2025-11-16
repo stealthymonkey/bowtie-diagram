@@ -19,6 +19,14 @@ const defaultOptions: LayoutOptions = {
   },
 };
 
+const DEFAULT_PARENT_NODE_WIDTH = 180;
+const DEFAULT_PARENT_NODE_HEIGHT = 80;
+const DEFAULT_BARRIER_NODE_WIDTH = 240;
+const DEFAULT_BARRIER_NODE_HEIGHT = 120;
+const BARRIER_HORIZONTAL_GAP = 80;
+const BARRIER_VERTICAL_GAP = 32;
+const PRIMARY_NODE_VERTICAL_GAP = 48;
+
 /**
  * Converts bowtie diagram to ELK graph structure
  */
@@ -59,7 +67,8 @@ export async function layoutBowtieDiagram(
   try {
     const layoutedGraph = await elk.layout(elkGraph);
     const nodes = convertElkToLayoutNodes(layoutedGraph);
-    return distributeBarriers(nodes);
+    const compacted = compactPrimaryNodes(nodes);
+    return distributeBarriers(compacted);
   } catch (error) {
     console.error('ELK layout error:', error);
     throw error;
@@ -256,14 +265,46 @@ function convertElkToLayoutNodes(elkGraph: any): LayoutNode[] {
   return nodes;
 }
 
+function compactPrimaryNodes(nodes: LayoutNode[]): LayoutNode[] {
+  const topEvent = nodes.find((node) => node.type === 'topEvent');
+  const topEventHeight = topEvent?.height ?? DEFAULT_PARENT_NODE_HEIGHT;
+  const topEventCenterY = topEvent ? (topEvent.y ?? 0) + topEventHeight / 2 : null;
+
+  const alignColumn = (type: LayoutNode['type']) => {
+    const column = nodes.filter(
+      (node) => node.type === type && !node.parentId,
+    );
+    if (column.length <= 1) {
+      return;
+    }
+
+    const gap = PRIMARY_NODE_VERTICAL_GAP;
+    const totalHeight =
+      column.reduce(
+        (sum, node) => sum + (node.height ?? DEFAULT_PARENT_NODE_HEIGHT),
+        0,
+      ) +
+      gap * (column.length - 1);
+    const anchor =
+      topEventCenterY ??
+      column.reduce((sum, node) => sum + (node.y ?? 0), 0) / column.length;
+    let currentY = anchor - totalHeight / 2;
+
+    column
+      .sort((a, b) => (a.y ?? 0) - (b.y ?? 0))
+      .forEach((node) => {
+        node.y = currentY;
+        currentY += (node.height ?? DEFAULT_PARENT_NODE_HEIGHT) + gap;
+      });
+  };
+
+  alignColumn('threat');
+  alignColumn('consequence');
+  return nodes;
+}
+
 function distributeBarriers(nodes: LayoutNode[]): LayoutNode[] {
   const nodeMap = new Map(nodes.map((node) => [node.id, node]));
-  const DEFAULT_BARRIER_WIDTH = 240;
-  const DEFAULT_BARRIER_HEIGHT = 120;
-  const DEFAULT_PARENT_WIDTH = 180;
-  const DEFAULT_PARENT_HEIGHT = 80;
-  const HORIZONTAL_GAP = 80;
-  const VERTICAL_GAP = 32;
 
   interface BarrierGroup {
     parentId: string;
@@ -289,8 +330,8 @@ function distributeBarriers(nodes: LayoutNode[]): LayoutNode[] {
   groups.forEach((group) => {
     const parent = nodeMap.get(group.parentId);
     if (!parent) return;
-    const parentHeight = parent.height ?? DEFAULT_PARENT_HEIGHT;
-    const parentWidth = parent.width ?? DEFAULT_PARENT_WIDTH;
+    const parentHeight = parent.height ?? DEFAULT_PARENT_NODE_HEIGHT;
+    const parentWidth = parent.width ?? DEFAULT_PARENT_NODE_WIDTH;
     const parentCenterY = (parent.y ?? 0) + parentHeight / 2;
 
     const sorted = group.nodes.sort((a, b) => {
@@ -304,21 +345,21 @@ function distributeBarriers(nodes: LayoutNode[]): LayoutNode[] {
       return (a.y ?? 0) - (b.y ?? 0);
     });
     const totalHeight = sorted.reduce((acc, barrier, index) => {
-      const height = barrier.height ?? DEFAULT_BARRIER_HEIGHT;
-      return acc + height + (index > 0 ? VERTICAL_GAP : 0);
+      const height = barrier.height ?? DEFAULT_BARRIER_NODE_HEIGHT;
+      return acc + height + (index > 0 ? BARRIER_VERTICAL_GAP : 0);
     }, 0);
 
     let currentY = parentCenterY - totalHeight / 2;
     sorted.forEach((barrier) => {
-      const barrierHeight = barrier.height ?? DEFAULT_BARRIER_HEIGHT;
-      const barrierWidth = barrier.width ?? DEFAULT_BARRIER_WIDTH;
+      const barrierHeight = barrier.height ?? DEFAULT_BARRIER_NODE_HEIGHT;
+      const barrierWidth = barrier.width ?? DEFAULT_BARRIER_NODE_WIDTH;
       barrier.y = currentY;
-      currentY += barrierHeight + VERTICAL_GAP;
+      currentY += barrierHeight + BARRIER_VERTICAL_GAP;
 
       if (group.side === 'left') {
-        barrier.x = (parent.x ?? 0) - HORIZONTAL_GAP - barrierWidth;
+        barrier.x = (parent.x ?? 0) - BARRIER_HORIZONTAL_GAP - barrierWidth;
       } else {
-        barrier.x = (parent.x ?? 0) + parentWidth + HORIZONTAL_GAP;
+        barrier.x = (parent.x ?? 0) + parentWidth + BARRIER_HORIZONTAL_GAP;
       }
     });
   });
