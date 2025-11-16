@@ -646,7 +646,6 @@ function buildEdges(
   };
 
   layoutNodes.forEach((layoutNode) => {
-  layoutNodes.forEach((layoutNode) => {
     if (layoutNode.type === 'threat') {
       addEdge({
         id: `edge-${layoutNode.id}-topEvent`,
