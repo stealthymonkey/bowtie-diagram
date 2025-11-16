@@ -901,7 +901,12 @@ function filterGraphForFocus(
   }
 
   if (!focusedNodeId) {
-    return { nodes, edges };
+    const filteredNodes = nodes.filter((node) => node.type !== 'barrier');
+    const allowedIds = new Set(filteredNodes.map((node) => node.id));
+    const filteredEdges = edges.filter(
+      (edge) => allowedIds.has(edge.source) && allowedIds.has(edge.target),
+    );
+    return { nodes: filteredNodes, edges: filteredEdges };
   }
 
   const allowedIds = new Set<string>();
