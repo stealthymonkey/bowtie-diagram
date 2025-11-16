@@ -624,6 +624,8 @@ function buildEdges(
   const edges: Edge[] = [];
   const topEventNodeId = `topEvent-${diagram.topEvent.id}`;
   const seenConnections = new Set<string>();
+  const preventiveBarrierChains = new Map<string, LayoutNode[]>();
+  const mitigativeBarrierChains = new Map<string, LayoutNode[]>();
 
   const addEdge = (edge: Edge) => {
     if (!nodeIds.has(edge.source) || !nodeIds.has(edge.target)) {
@@ -645,48 +647,89 @@ function buildEdges(
     });
   };
 
-  layoutNodes.forEach((layoutNode) => {
-    if (layoutNode.type === 'threat') {
+  const connectThroughBarriers = (
+    chain: LayoutNode[] | undefined,
+    startId: string,
+    endId: string,
+    fallbackEdgeId: string,
+  ) => {
+    if (!chain || chain.length === 0) {
       addEdge({
-        id: `edge-${layoutNode.id}-topEvent`,
-        source: layoutNode.id,
-        target: topEventNodeId,
+        id: fallbackEdgeId,
+        source: startId,
+        target: endId,
         type: 'bowtie',
       });
+      return;
+    }
+
+    let previousId = startId;
+    chain.forEach((barrierNode) => {
+      addEdge({
+        id: `edge-${previousId}-${barrierNode.id}`,
+        source: previousId,
+        target: barrierNode.id,
+        type: 'bowtie',
+      });
+      previousId = barrierNode.id;
+    });
+
+    addEdge({
+      id: `edge-${previousId}-${endId}`,
+      source: previousId,
+      target: endId,
+      type: 'bowtie',
+    });
+  };
+
+  layoutNodes.forEach((node) => {
+    if (node.type !== 'barrier') return;
+    const barrierId = extractBarrierId(node.id);
+    if (!barrierId) return;
+    const barrier = barrierMap.get(barrierId);
+    if (!barrier) return;
+
+    if (barrier.type === 'preventive' && barrier.threatId) {
+      const threatNodeId = `threat-${barrier.threatId}`;
+      if (!preventiveBarrierChains.has(threatNodeId)) {
+        preventiveBarrierChains.set(threatNodeId, []);
+      }
+      preventiveBarrierChains.get(threatNodeId)!.push(node);
+    }
+
+    if (barrier.type === 'mitigative' && barrier.consequenceId) {
+      const consequenceNodeId = `consequence-${barrier.consequenceId}`;
+      if (!mitigativeBarrierChains.has(consequenceNodeId)) {
+        mitigativeBarrierChains.set(consequenceNodeId, []);
+      }
+      mitigativeBarrierChains.get(consequenceNodeId)!.push(node);
+    }
+  });
+
+  preventiveBarrierChains.forEach((chain) =>
+    chain.sort((a, b) => (a.y ?? 0) - (b.y ?? 0)),
+  );
+  mitigativeBarrierChains.forEach((chain) =>
+    chain.sort((a, b) => (a.y ?? 0) - (b.y ?? 0)),
+  );
+
+  layoutNodes.forEach((layoutNode) => {
+    if (layoutNode.type === 'threat') {
+      connectThroughBarriers(
+        preventiveBarrierChains.get(layoutNode.id),
+        layoutNode.id,
+        topEventNodeId,
+        `edge-${layoutNode.id}-topEvent`,
+      );
     }
 
     if (layoutNode.type === 'consequence') {
-      addEdge({
-        id: `edge-topEvent-${layoutNode.id}`,
-        source: topEventNodeId,
-        target: layoutNode.id,
-        type: 'bowtie',
-      });
-    }
-
-    if (layoutNode.type === 'barrier') {
-      const barrierId = extractBarrierId(layoutNode.id);
-      if (!barrierId) return;
-      const barrier = barrierMap.get(barrierId);
-      if (!barrier) return;
-
-      if (barrier.type === 'preventive' && barrier.threatId) {
-        addEdge({
-          id: `edge-threat-${barrier.threatId}-barrier-${barrier.id}`,
-          source: `threat-${barrier.threatId}`,
-          target: layoutNode.id,
-          type: 'bowtie',
-        });
-      }
-
-      if (barrier.type === 'mitigative' && barrier.consequenceId) {
-        addEdge({
-          id: `edge-barrier-${barrier.id}-consequence-${barrier.consequenceId}`,
-          source: layoutNode.id,
-          target: `consequence-${barrier.consequenceId}`,
-          type: 'bowtie',
-        });
-      }
+      connectThroughBarriers(
+        mitigativeBarrierChains.get(layoutNode.id),
+        topEventNodeId,
+        layoutNode.id,
+        `edge-topEvent-${layoutNode.id}`,
+      );
     }
 
     if (layoutNode.type === 'threat' && layoutNode.parentId) {
