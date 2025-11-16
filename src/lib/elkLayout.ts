@@ -25,10 +25,8 @@ const DEFAULT_BARRIER_NODE_WIDTH = 240;
 const DEFAULT_BARRIER_NODE_HEIGHT = 120;
 const BARRIER_HORIZONTAL_GAP = 80;
 const BARRIER_VERTICAL_GAP = 32;
-const PRIMARY_NODE_DEFAULT_GAP = 72;
-const PRIMARY_NODE_MIN_GAP = 12;
-const THREAT_COLUMN_EDGE_BOUND = 190;
-const CONSEQUENCE_COLUMN_EDGE_BOUND = 145;
+const THREAT_COLUMN_EDGE_BOUND = 135;
+const CONSEQUENCE_COLUMN_EDGE_BOUND = 200;
 
 /**
  * Converts bowtie diagram to ELK graph structure
@@ -325,13 +323,13 @@ function compactPrimaryNodes(nodes: LayoutNode[]): LayoutNode[] {
   };
 
   alignColumn('threat', {
-    gap: 18,
-    minGap: 16,
+    gap: 12,
+    minGap: 10,
     edgeBound: THREAT_COLUMN_EDGE_BOUND,
   });
   alignColumn('consequence', {
-    gap: 18,
-    minGap: 16,
+    gap: 36,
+    minGap: 24,
     edgeBound: CONSEQUENCE_COLUMN_EDGE_BOUND,
   });
   return nodes;
