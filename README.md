@@ -1,4 +1,5 @@
 # Bowtie Diagram Visualization
+#By: Siddhant Agarwal, Madelen Atanassov, Christian Busk, Tarik Liassou, Tyler Fearne
 
 A React-based bowtie diagram visualization system for modeling cause and effect relationships in car accidents and hazards.
 
