@@ -1232,10 +1232,11 @@ function filterGraphForFocus(
   const focusKey = focusedNodeId.replace(/^(threat|consequence)-/, '');
 
   nodes.forEach((node) => {
-    if (focusIsThreat && node.type === 'consequence') {
+    if (node.type === 'threat') {
       allowedIds.add(node.id);
+      return;
     }
-    if (!focusIsThreat && node.type === 'threat') {
+    if (node.type === 'consequence') {
       allowedIds.add(node.id);
     }
   });
@@ -1259,7 +1260,10 @@ function filterGraphForFocus(
       return false;
     }
     if (focusedNodeId && (edge.data as any)?.fallback) {
-      return false;
+      const connectsFocus = edge.source === focusedNodeId || edge.target === focusedNodeId;
+      if (connectsFocus) {
+        return false;
+      }
     }
     return true;
   });
