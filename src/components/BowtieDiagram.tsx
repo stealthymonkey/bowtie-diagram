@@ -70,6 +70,9 @@ const FOCUS_VERTICAL_RANGE = 140;
 const FOCUS_VERTICAL_GAP = 16;
 const FOCUS_OPPOSITE_MIN_GAP = 280;
 const POSITION_EPSILON = 0.5;
+const THREAT_COLUMN_GAP = 20;
+const CONSEQUENCE_COLUMN_GAP = 42;
+const PRIMARY_NODE_MIN_GAP = 12;
 
 const severityLevelMap: Record<Severity, number> = {
   low: 1,
@@ -1235,9 +1238,53 @@ function applyFocusLayout(
         }
       }
     }
+
+    const topEventHeight = topEventRef.height ?? TOP_EVENT_NODE_SIZE;
+    const anchorY = (topEventRef.position?.y ?? 0) + topEventHeight / 2;
+    alignOppositeColumn(
+      updatedNodes,
+      isThreatFocus ? 'consequence' : 'threat',
+      anchorY,
+    );
   }
 
   return { nodes: updatedNodes, inlinePositions };
+}
+
+function alignOppositeColumn(
+  nodes: Node[],
+  type: 'threat' | 'consequence',
+  anchorY: number,
+) {
+  const columnNodes = nodes.filter(
+    (node) => node.type === type && !node.parentId,
+  );
+  if (columnNodes.length <= 1) {
+    return;
+  }
+
+  const gap =
+    type === 'threat'
+      ? Math.max(THREAT_COLUMN_GAP, PRIMARY_NODE_MIN_GAP)
+      : Math.max(CONSEQUENCE_COLUMN_GAP, PRIMARY_NODE_MIN_GAP);
+  const sumHeights = columnNodes.reduce(
+    (sum, node) => sum + (node.height ?? DEFAULT_PARENT_NODE_HEIGHT),
+    0,
+  );
+  const totalHeight = sumHeights + gap * (columnNodes.length - 1);
+  let currentY = anchorY - totalHeight / 2;
+  const ordered = columnNodes.sort(
+    (a, b) => (a.position?.y ?? 0) - (b.position?.y ?? 0),
+  );
+  ordered.forEach((node) => {
+    const pos = node.position ?? { x: 0, y: 0 };
+    const height = node.height ?? DEFAULT_PARENT_NODE_HEIGHT;
+    node.position = {
+      ...pos,
+      y: currentY,
+    };
+    currentY += height + gap;
+  });
 }
 
 function filterGraphForFocus(
