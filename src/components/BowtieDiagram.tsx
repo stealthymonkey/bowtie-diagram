@@ -1232,11 +1232,10 @@ function filterGraphForFocus(
   const focusKey = focusedNodeId.replace(/^(threat|consequence)-/, '');
 
   nodes.forEach((node) => {
-    if (node.type === 'threat') {
+    if (focusIsThreat && node.type === 'consequence') {
       allowedIds.add(node.id);
-      return;
     }
-    if (node.type === 'consequence') {
+    if (!focusIsThreat && node.type === 'threat') {
       allowedIds.add(node.id);
     }
   });
