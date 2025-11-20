@@ -1267,8 +1267,12 @@ function alignOppositeColumn(
     type === 'threat'
       ? Math.max(THREAT_COLUMN_GAP, PRIMARY_NODE_MIN_GAP)
       : Math.max(CONSEQUENCE_COLUMN_GAP, PRIMARY_NODE_MIN_GAP);
+  const heightLookup = new Map<string, number>();
+  columnNodes.forEach((node) => {
+    heightLookup.set(node.id, getNodeHeight(node));
+  });
   const sumHeights = columnNodes.reduce(
-    (sum, node) => sum + (node.height ?? DEFAULT_PARENT_NODE_HEIGHT),
+    (sum, node) => sum + (heightLookup.get(node.id) ?? DEFAULT_PARENT_NODE_HEIGHT),
     0,
   );
   const totalHeight = sumHeights + gap * (columnNodes.length - 1);
@@ -1278,13 +1282,17 @@ function alignOppositeColumn(
   );
   ordered.forEach((node) => {
     const pos = node.position ?? { x: 0, y: 0 };
-    const height = node.height ?? DEFAULT_PARENT_NODE_HEIGHT;
+    const height = heightLookup.get(node.id) ?? DEFAULT_PARENT_NODE_HEIGHT;
     node.position = {
       ...pos,
       y: currentY,
     };
     currentY += height + gap;
   });
+}
+
+function getNodeHeight(node: Node) {
+  return node.measured?.height ?? node.height ?? DEFAULT_PARENT_NODE_HEIGHT;
 }
 
 function filterGraphForFocus(
