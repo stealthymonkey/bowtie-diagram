@@ -69,6 +69,7 @@ const FOCUS_BARRIER_GAP = 48;
 const FOCUS_VERTICAL_RANGE = 140;
 const FOCUS_VERTICAL_GAP = 16;
 const FOCUS_OPPOSITE_MIN_GAP = 280;
+const POSITION_EPSILON = 0.5;
 
 const severityLevelMap: Record<Severity, number> = {
   low: 1,
@@ -1210,8 +1211,8 @@ function applyFocusLayout(
           ...consequences.map((node) => node.position?.x ?? Number.POSITIVE_INFINITY),
         );
         const desiredMin = topEventX + topEventWidth + FOCUS_OPPOSITE_MIN_GAP;
-        if (minConsequenceX > desiredMin) {
-          const delta = desiredMin - minConsequenceX;
+        const delta = desiredMin - minConsequenceX;
+        if (Math.abs(delta) > POSITION_EPSILON) {
           consequences.forEach((node) => {
             const pos = node.position ?? { x: 0, y: 0 };
             node.position = { ...pos, x: pos.x + delta };
@@ -1225,8 +1226,8 @@ function applyFocusLayout(
           ...threats.map((node) => (node.position?.x ?? 0) + (node.width ?? DEFAULT_PARENT_NODE_WIDTH)),
         );
         const desiredMax = topEventX - FOCUS_OPPOSITE_MIN_GAP;
-        if (maxThreatRight < desiredMax) {
-          const delta = desiredMax - maxThreatRight;
+        const delta = desiredMax - maxThreatRight;
+        if (Math.abs(delta) > POSITION_EPSILON) {
           threats.forEach((node) => {
             const pos = node.position ?? { x: 0, y: 0 };
             node.position = { ...pos, x: pos.x + delta };
